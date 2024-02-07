@@ -1,0 +1,54 @@
+version: "3"
+# docker compose 由几个服务组成的
+services:
+  #indiviual service name
+  mysql8:
+    image: mysql:8.0.34
+    restart: always
+    command:  #启动mysql容器的预设命令
+      --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:  #初始化脚本
+      -  ./script/mysql/:/docker-entrypoint-initdb.d/
+    ports: #外部访问 用 13316
+      - 13316:3306
+
+  redis:
+    image: "bitnami/redis:latest"
+    restart: always
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    ports:
+      - '6379:6379'
+
+
+#  etcd:
+#    image: "bitnami/etcd:latest"
+#    restart: always
+#    environment:
+#      - ALLOW_NON_AUTHENTICATION=yes
+#    ports:
+#      - "12379:2379"
+
+  etcd:
+    image: "bitnami/etcd:3.5.9"
+    restart: always
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+#      - ETCD_ROOT_PASSWORD="lxj360"
+
+    ports:
+      - 12379:2379
+
+
+  mongo:
+    image: "mongo:6.0"
+#    on-failure代表除了手动停止都会重启
+    restart: on-failure
+    container_name: we-mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    ports:
+      - 27017:27017

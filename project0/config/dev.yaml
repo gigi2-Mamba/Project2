@@ -1,0 +1,6 @@
+test:
+  value1: 123456gffggggg
+db:
+  dsn: "root:root@tcp(localhost:13316)/webook?charset=utf8mb4&parseTime=True"
+redis:
+  addr: "localhost:6379"

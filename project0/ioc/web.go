@@ -1,0 +1,62 @@
+package ioc
+
+import (
+	"context"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
+	"log"
+	"project0/internal/web"
+	"project0/internal/web/ijwt"
+	"project0/internal/web/middlewares"
+	"project0/pkg/ginx/middleware/ratelimit"
+	"project0/pkg/limiter"
+	"project0/pkg/loggerDefine"
+	"strings"
+	"time"
+)
+
+func InitWebServer(mdls []gin.HandlerFunc, userHdl *web.UserHandler, wechatHdl *web.OAuth2Handler,articleHdl *web.ArticleHandler) *gin.Engine {
+	server := gin.Default()
+	server.Use(mdls...)
+	// 后续增加了handler,就要继续补充。  hdl.RegisterRoute(server) 对gin server 注册路由
+	userHdl.RegisterRoute(server)
+	wechatHdl.RegisterRoutes(server)
+	articleHdl.RegisterRoutes(server)
+	return server
+}
+
+// 要使用基于redis的ratelimit，要加入redis.cmdable
+func InitGinMiddlewares(redisClient redis.Cmdable,Hdl ijwt.Handler,l loggerDefine.LoggerV1) []gin.HandlerFunc {
+
+	return []gin.HandlerFunc{
+		cors.New(cors.Config{
+			AllowCredentials: true, // 允许携带cookie
+			AllowHeaders:     []string{"Content-Type", "authorization"},
+			//AllowOrigins:     []string{"http://localhost:3000"},
+			//AllowAllOrigins: true,
+			//AllowOriginFunc: func(origin string) bool {
+			//		//	return  true
+			//		//},
+			MaxAge: 12 * time.Hour,
+			//允许前端访问后端响应携带的token
+			AllowOriginFunc: func(origin string) bool {
+				log.Println(strings.HasPrefix(origin, "http://localhost"))
+				if strings.HasPrefix(origin, "http://localhost") {
+					log.Println("may be here")
+					return true
+				}
+				return strings.Contains(origin, "company.com")
+			},
+			// 为了让前端可以拿到，后端做的 ctx.Header(key,value), 所以exposeHeaders for the header kv u set
+			ExposeHeaders: []string{"x-ijwt-token","x-refresh-token"},
+		}), func(context *gin.Context) {
+			log.Println("跨域通过middleware")
+		},
+		ratelimit.NewBuilder(limiter.NewRedisSlideWindowLimiter(redisClient, time.Second, 1000)).Build(),
+		middlewares.NewLogMiddlewareBuilder(func(ctx context.Context, al middlewares.AccessLog) {
+			l.Debug("",loggerDefine.Field{Key: "req",Val: al})
+		}).AllowReqBody().AllowRespBody().Build(),
+		middlewares.NewLoginJWTMiddlewareBuilder(Hdl).CheckLogin(),
+	}
+}
