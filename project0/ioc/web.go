@@ -33,7 +33,7 @@ func InitGinMiddlewares(redisClient redis.Cmdable,Hdl ijwt.Handler,l loggerDefin
 		cors.New(cors.Config{
 			AllowCredentials: true, // 允许携带cookie
 			AllowHeaders:     []string{"Content-Type", "authorization"},
-			//AllowOrigins:     []string{"http://localhost:3000"},
+			AllowOrigins:     []string{"http://localhost:3000"},
 			//AllowAllOrigins: true,
 			//AllowOriginFunc: func(origin string) bool {
 			//		//	return  true
@@ -43,13 +43,14 @@ func InitGinMiddlewares(redisClient redis.Cmdable,Hdl ijwt.Handler,l loggerDefin
 			AllowOriginFunc: func(origin string) bool {
 				log.Println(strings.HasPrefix(origin, "http://localhost"))
 				if strings.HasPrefix(origin, "http://localhost") {
-					log.Println("may be here")
+					//log.Println("may be here")
 					return true
 				}
 				return strings.Contains(origin, "company.com")
 			},
 			// 为了让前端可以拿到，后端做的 ctx.Header(key,value), 所以exposeHeaders for the header kv u set
-			ExposeHeaders: []string{"x-ijwt-token","x-refresh-token"},
+			//jwt token是短token,refresh token 是长token
+			ExposeHeaders: []string{"x-jwt-token","x-refresh-token"},
 		}), func(context *gin.Context) {
 			log.Println("跨域通过middleware")
 		},

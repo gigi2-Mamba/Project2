@@ -26,6 +26,8 @@ type ArticleDao interface {
 	Sync(ctx context.Context, entity Article) (int64, error)
 	SyncStatus(ctx context.Context, id int64, uid int64, status uint8) error
 	GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]Article,error)
+	GetById(ctx context.Context, id int64) (Article, error)
+	GetPubById(ctx context.Context, id int64) (PublishedArticle,error)
 
 
 }
@@ -39,9 +41,23 @@ type ArticleGROMDAO struct {
 	db *gorm.DB
 }
 
+func (a *ArticleGROMDAO) GetPubById(ctx context.Context, id int64) (PublishedArticle, error) {
+	var  art PublishedArticle
+	err := a.db.Where("author_id = ? ", id).First(&art).Error
+
+	return art,err
+}
+
+func (a *ArticleGROMDAO) GetById(ctx context.Context, id int64) (Article, error) {
+	var art Article
+	err := a.db.Where("id = ?", id).Find(&art).Error
+	return art,err
+}
+
 func (a *ArticleGROMDAO) GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]Article,error){
+
 	var arts []Article
-	err := a.db.Where("author_id = ?").Offset(offset).Limit(limit).
+	err := a.db.Where("author_id = ?",uid).Offset(offset).Limit(limit).
 		Order("utime DESC").Find(&arts).Error
 	return  arts ,err
 }

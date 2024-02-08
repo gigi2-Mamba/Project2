@@ -24,3 +24,11 @@ func Int(key string,val int) Field{
 		Val: val,
 	}
 }
+
+
+func String(key string,val string) Field{
+	return Field{
+		Key: key,
+		Val: val,
+	}
+}

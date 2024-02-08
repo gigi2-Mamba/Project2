@@ -5,10 +5,10 @@ package wire
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
-	repository2 "project0/internal/repository"
-	cache2 "project0/internal/repository/cache"
+	 "project0/internal/repository"
+	 "project0/internal/repository/cache"
 	"project0/internal/repository/dao"
-	service2 "project0/internal/service"
+	 "project0/internal/service"
 	"project0/internal/service/sms/failover"
 	"project0/internal/web"
 	"project0/internal/web/ijwt"
@@ -25,10 +25,10 @@ func InitWebServerJ() *gin.Engine {
 		// DAO
 		dao.NewUserDAO,dao.NewArticleGROMDAO,
 		// cache
-		cache2.NewUserCache, cache2.NewCodeCache,
+		cache.NewUserCache, cache.NewCodeCache,cache.NewArticleRedisCache,
 		// Repository
 		// repository.NewUserRepository
-		repository2.NewCacheUserRepository, repository2.NewCodeRepository,repository2.NewCacheArticleRepository,
+		repository.NewCacheUserRepository, repository.NewCodeRepository,repository.NewCacheArticleRepository,
 
 		// Service
 		//sms
@@ -36,8 +36,8 @@ func InitWebServerJ() *gin.Engine {
 		ioc.InitSMSService,
 		// 注入这个会报错因为，没有直接入参使用到这个方法
 		//ioc.InitFailoverService,// response time failover service
-		service2.NewUserService, service2.NewCodeService,
-		ioc.InitWechatService,service2.NewArticleService,
+		service.NewUserService, service.NewCodeService,
+		ioc.InitWechatService,service.NewArticleService,
 		//web handler
 		web.NewUserHandler,
 		web.NewOAuth2Handler,

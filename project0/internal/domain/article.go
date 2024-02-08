@@ -14,6 +14,16 @@ type Article struct {
 }
 
 
+//截取一定长度做摘要
+func (a Article) Abstract()  string{
+	// 这样命名直指本质
+     str := []rune(a.Content)
+	 if len(str) > 128 {
+		 str = str[:128]
+	 }
+	 return string(str)
+}
+
 // 面向领域来说
 type  ArticleStatus uint8
 

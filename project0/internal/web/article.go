@@ -9,6 +9,7 @@ import (
 	"project0/internal/web/ijwt"
 	"project0/pkg/ginx"
 	"project0/pkg/loggerDefine"
+	"strconv"
 	"time"
 )
 
@@ -30,10 +31,12 @@ func (a *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 	ag.POST("/publish",ginx.WrapBody(a.Publish))
 	// 自己从头到尾写一个维护帖子状态。撤回帖子
 	ag.POST("/withdraw",a.Withdraw)
-	// 读者接口
+	// 创作者文章详情接口
 	ag.GET("/detail/:id",a.Detail)
 	// 创作者接口
 	ag.POST("/list",a.List)
+	pub := ag.Group("/pub")
+	pub.GET("/detail",a.PubDetail)
 }
 
 // 新建和修改共用一个接口
@@ -121,7 +124,6 @@ func (a *ArticleHandler) Withdraw(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK,Result{
 		Msg: "ok",
 	})
-
 }
 
 func (a *ArticleHandler) List(ctx *gin.Context) {
@@ -149,6 +151,7 @@ func (a *ArticleHandler) List(ctx *gin.Context) {
 				Id: src.Id,
 				Title: src.Title,
 				Content: src.Content,
+				Abstract: src.Abstract(),
 				AuthorId: src.Author.Id,
 				Status: src.Status.ToUint8(),
 				Ctime: src.Ctime.Format(time.DateTime),
@@ -156,11 +159,100 @@ func (a *ArticleHandler) List(ctx *gin.Context) {
 			}
 		}),
 	})
+}
 
+func (a *ArticleHandler) Detail(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	//复习 strconv了   字符转换标准库。  字符串转向其他对象
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusOK,Result{
+			Msg: "id参数不对",
+			Code: 4,
+		})
+		a.l.Warn("查询文章失败,id格式不对",loggerDefine.String("id",idStr),
+			loggerDefine.Error(err),
+			)
+		return
+	}
+
+	art, err := a.svc.GetById(ctx, id)
+	if err != nil {
+		ctx.JSON(http.StatusOK,Result{
+			Code: 5,
+			Msg: "系统错误",
+		})
+		a.l.Error("查询文章失败，系统错误",loggerDefine.Error(err),
+			loggerDefine.Int64("id",id))
+	}
+
+	uc := ctx.MustGet("user").(ijwt.UserClaims)
+	if uc.Uid != art.Author.Id {
+		ctx.JSON(http.StatusOK,Result{
+			Code: 5,
+			Msg: "系统错误",
+		})
+		a.l.Error("非法查询文章",loggerDefine.Error(err),
+			loggerDefine.Int64("id",id),
+			loggerDefine.Int64("uid", uc.Uid))
+	}
+	vo := ArticleVo{
+		Id: art.Id,
+		Title: art.Title,
+		Content: art.Content,
+		AuthorId: art.Author.Id,
+		Status: art.Status.ToUint8(),
+		Ctime: art.Ctime.Format(time.DateTime),
+		Utime: art.Utime.Format(time.DateTime),
+	}
+
+	ctx.JSON(http.StatusOK,Result{
+		Code: 2,
+		Data: vo,
+	})
 
 
 }
 
-func (a *ArticleHandler) Detail(context *gin.Context) {
-	
+func (a *ArticleHandler) PubDetail(ctx*gin.Context) {
+	idStr := ctx.Param("id")
+	//复习 strconv了   字符转换标准库。  字符串转向其他对象
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusOK,Result{
+			Msg: "id参数不对",
+			Code: 4,
+		})
+		a.l.Warn("查询文章失败,id格式不对",loggerDefine.String("id",idStr),
+			loggerDefine.Error(err),
+		)
+		return
+	}
+
+	art, err := a.svc.GetPubById(ctx, id)
+	if err != nil {
+		ctx.JSON(http.StatusOK,Result{
+			Code: 5,
+			Msg: "系统错误",
+		})
+		a.l.Error("查询已发布的文章失败，系统错误",loggerDefine.Error(err),
+			loggerDefine.Int64("id",id))
+	}
+	vo := ArticleVo{
+		Id: art.Id,
+		Title: art.Title,
+		Content: art.Content,
+		AuthorId: art.Author.Id,
+		// 在Article dao没有作者名称，可以选择在 Repo层做处理
+		AuthorName: art.Author.Name,
+		Status: art.Status.ToUint8(),
+		Ctime: art.Ctime.Format(time.DateTime),
+		Utime: art.Utime.Format(time.DateTime),
+	}
+
+	ctx.JSON(http.StatusOK,Result{
+		Code: 2,
+		Data: vo,
+	})
+
 }

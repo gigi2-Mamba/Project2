@@ -15,6 +15,8 @@ type ArticleService interface {
 	Publish(ctx context.Context, art domain.Article) (int64, error)
 	Withdraw(ctx context.Context, uid int64, id int64) error
 	GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]domain.Article,error)
+	GetById(ctx context.Context, id int64) (domain.Article,error)
+	GetPubById(ctx context.Context, id int64) (domain.Article,error)
 }
 
 type articleService struct {
@@ -24,6 +26,16 @@ type articleService struct {
 	readerRepo repository.ArticleReaderRepository
 	authorRepo repository.ArticleAuthorRepository
 	l          loggerDefine.LoggerV1
+}
+
+func (a *articleService) GetPubById(ctx context.Context, id int64) (domain.Article, error) {
+	// 如何是微服务版本，可以直接调用其他服务来补全前端确实的领域信息
+	return a.repo.GetPubById(ctx,id)
+}
+
+func (a *articleService) GetById(ctx context.Context, id int64) (domain.Article, error) {
+
+	return a.repo.GetById(ctx, id)
 }
 
 func (a *articleService) GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]domain.Article, error) {
