@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/redis/go-redis/v9"
+	"log"
 	"project0/internal/domain"
 	"time"
 )
@@ -31,14 +32,16 @@ type  ArticleRedisCache struct {
 
 func (r *ArticleRedisCache) GetPub(ctx context.Context, id int64) (domain.Article, error) {
 	key := r.PubKey(id)
+	//log.Println("GetPub key",key)
 	val,err := r.client.Get(ctx, key).Bytes()
 	if err != nil {
 		return domain.Article{}, err
 	}
 	var res domain.Article
 	//最后一个err直接返回
-	err = json.Unmarshal(val,&res)
 
+	err = json.Unmarshal(val,&res)
+	log.Println("---after get cache res",res.Author.Id)
 	return res,err
 }
 

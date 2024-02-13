@@ -25,6 +25,20 @@ type ArticleVo struct {
 	AuthorName string `json:"author_name,omitempty"`
 	Ctime      string `json:"ctime,omitempty"`
 	Utime      string `json:"utime,omitempty"`
+
+	ReadCnt    int64 `json:"read_cnt,omitempty"`
+	LikeCnt    int64 `json:"like_cnt,omitempty"`
+	CollectCnt int64 `json:"collect_cnt,omitempty"`
+	Liked      bool  `json:"liked,omitempty"`
+	Collected  bool  `json:"collected,omitempty"`
 }
 
+type LikeReq struct {
+	Id  int64 `json:"id"`
+	Like bool `json:"like"`
+}
 
+type CollectReq struct {
+	 Id int64 `json:"id"`
+	 Cid int64 `json:"uid"`
+}

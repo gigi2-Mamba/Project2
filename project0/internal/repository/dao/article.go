@@ -28,8 +28,6 @@ type ArticleDao interface {
 	GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]Article,error)
 	GetById(ctx context.Context, id int64) (Article, error)
 	GetPubById(ctx context.Context, id int64) (PublishedArticle,error)
-
-
 }
 //同库不同表,高度相似可以做类型延伸
 type PublishedArticle Article
@@ -43,7 +41,8 @@ type ArticleGROMDAO struct {
 
 func (a *ArticleGROMDAO) GetPubById(ctx context.Context, id int64) (PublishedArticle, error) {
 	var  art PublishedArticle
-	err := a.db.Where("author_id = ? ", id).First(&art).Error
+	// first默认应该是按什么顺序查找呢
+	err := a.db.Where(" id = ? ", id).First(&art).Error
 
 	return art,err
 }
@@ -208,13 +207,13 @@ func (a *ArticleGROMDAO) UpdateById(ctx context.Context, art Article) error {
 	return nil
 }
 
+
 func (a *ArticleGROMDAO) Insert(ctx context.Context, art Article) (int64, error) {
     now := time.Now().UnixMilli()
 	art.Ctime = now
 	art.Utime = now
 	//log.Printf("id: %v,title: %v,status:%v,auhtorid: %v,ctime:%v,utime:%v /n",art.Id,art.Title,art.Status,art.AuthorId,art.Ctime,art.Utime)
 	err :=a.db.Table("articles").WithContext(ctx).Create(&art).Error
-
 	return art.Id,err
 }
 

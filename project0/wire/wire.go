@@ -15,6 +15,10 @@ import (
 	"project0/ioc"
 )
 
+
+var interactiveSvcSet	= wire.NewSet(
+	service.NewInteractiveService,repository.NewCacheInteractiveRepository,
+	cache.NewInteractiveCache,dao.NewInteractiveGORMDAO,)
 // 首要的main先初始化webServer
 func InitWebServerJ() *gin.Engine {
 	wire.Build(
@@ -23,6 +27,7 @@ func InitWebServerJ() *gin.Engine {
 		//Response time trigger limiter    & 增加冗余
 		ioc.InitRedisLimiter,ioc.NewSMSS,
 		// DAO
+		interactiveSvcSet,
 		dao.NewUserDAO,dao.NewArticleGROMDAO,
 		// cache
 		cache.NewUserCache, cache.NewCodeCache,cache.NewArticleRedisCache,

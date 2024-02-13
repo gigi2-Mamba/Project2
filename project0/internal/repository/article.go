@@ -35,14 +35,14 @@ type CacheArticleRepository struct {
 }
 
 func (c *CacheArticleRepository) GetPubById(ctx context.Context, id int64) (domain.Article, error) {
-	// 直接获取缓存
 	res, err := c.cache.GetPub(ctx, id)
 	if err == nil {
+		//log.Println("获取到了缓存？？")
 		return res, nil
 	} else {
 		//日志记录
 	}
-
+    log.Println("没有该发布帖子的缓存")
 	pubArt, err := c.dao.GetPubById(ctx, id)
 	if err != nil {
 		return domain.Article{}, err

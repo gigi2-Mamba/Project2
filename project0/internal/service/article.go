@@ -17,6 +17,8 @@ type ArticleService interface {
 	GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]domain.Article,error)
 	GetById(ctx context.Context, id int64) (domain.Article,error)
 	GetPubById(ctx context.Context, id int64) (domain.Article,error)
+	
+
 }
 
 type articleService struct {
@@ -30,6 +32,7 @@ type articleService struct {
 
 func (a *articleService) GetPubById(ctx context.Context, id int64) (domain.Article, error) {
 	// 如何是微服务版本，可以直接调用其他服务来补全前端确实的领域信息
+	//log.Println("(a *articleService) GetPubById ",id)
 	return a.repo.GetPubById(ctx,id)
 }
 
@@ -47,10 +50,6 @@ func NewArticleService(repo repository.ArticleRepository) ArticleService {
 	return &articleService{repo: repo}
 }
 
-
-
-
-
 func (a *articleService) Withdraw(ctx context.Context, uid int64, id int64) error {
 	return a.repo.SyncStatus(ctx, id, uid, domain.ArticleStatusPrivate)
 }
@@ -59,20 +58,17 @@ func NewArticleServiceV1(authorRepo repository.ArticleAuthorRepository, readerRe
 	l loggerDefine.LoggerV1) *articleService {
 	return &articleService{readerRepo: readerRepo, authorRepo: authorRepo, l: l}
 }
-
 // 发表状态是属于业务逻辑，所以在服务层就改变了状态
 func (a *articleService) Publish(ctx context.Context, art domain.Article) (int64, error) {
 	art.Status = domain.ArticleStatusPublished
 	return a.repo.Sync(ctx, art)
 }
-
 // service层面分离制作库和线上库 v1   各个层面的实现分离制作库和线上库 service层面 是第一个版本
 // 靠重试
 func (a *articleService) PublishV1(ctx context.Context, art domain.Article) (int64, error) {
 	//return 0,nil
 	// 在tdd测试时，直接使用一个panic在这里，逻辑上静态语法检查就会miss
 	// tdd模式下写完的方法需要经常改
-
 	var (
 		id  = art.Id
 		err error
@@ -90,11 +86,9 @@ func (a *articleService) PublishV1(ctx context.Context, art domain.Article) (int
 	// 制作库和线上库同用一个id保持一致。 延伸神道： 近似但是不同用处的功能共用同样的东西，可以让另一个方法省个返回值。
 	//节约空间
 	art.Id = id
-
 	//--实践版本
 	//线上库可能已经有了
 	//可能也没有
-
 	//err = a.readerRepo.Save(ctx, art)
 	// 制作库保存成功，线上库保存失败,实践中这样就可以。 上线观察
 	//if err != nil {
@@ -103,7 +97,6 @@ func (a *articleService) PublishV1(ctx context.Context, art domain.Article) (int
 	//   return 0, err
 	//}
 	// --实践版本
-
 	// 引入重试
 	for i := 0; i < 3; i++ {
 		err = a.readerRepo.Save(ctx, art)
@@ -120,8 +113,6 @@ func (a *articleService) PublishV1(ctx context.Context, art domain.Article) (int
 
 	return id, errors.New("保存到制作库成功但是线上库失败,重试耗尽")
 }
-
-
 
 // 共用同一个接口实现修改和新建
 func (a *articleService) Save(ctx context.Context, article domain.Article) (int64, error) {

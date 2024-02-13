@@ -1,8 +1,11 @@
 package web
 
 import (
+	"context"
 	"github.com/ecodeclub/ekit/slice"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/sync/errgroup"
+	"log"
 	"net/http"
 	"project0/internal/domain"
 	"project0/internal/service"
@@ -15,13 +18,17 @@ import (
 
 type ArticleHandler struct {
 	svc service.ArticleService
+	interSvc  service.InteractiveService
 	l   loggerDefine.LoggerV1
+	biz string
 }
 
-func NewArticleHandler(svc service.ArticleService, l loggerDefine.LoggerV1) *ArticleHandler {
+func NewArticleHandler(svc service.ArticleService, l loggerDefine.LoggerV1,interSvc service.InteractiveService) *ArticleHandler {
 	return &ArticleHandler{
 		svc: svc,
-		l:   l}
+		l:   l,
+	    interSvc: interSvc,
+	    biz: "article"}
 }
 
 func (a *ArticleHandler) RegisterRoutes(server *gin.Engine) {
@@ -36,7 +43,11 @@ func (a *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 	// 创作者接口
 	ag.POST("/list",a.List)
 	pub := ag.Group("/pub")
-	pub.GET("/detail",a.PubDetail)
+	pub.GET("/:id",a.PubDetail)
+	// 点赞接口
+	pub.POST("/like",ginx.WrapBodyAndClaims(a.Like))
+	// 收藏
+	pub.POST("/collect",ginx.WrapBodyAndClaims(a.Collect))
 }
 
 // 新建和修改共用一个接口
@@ -161,6 +172,7 @@ func (a *ArticleHandler) List(ctx *gin.Context) {
 	})
 }
 
+//作者查看的自己的帖子详情
 func (a *ArticleHandler) Detail(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	//复习 strconv了   字符转换标准库。  字符串转向其他对象
@@ -214,10 +226,12 @@ func (a *ArticleHandler) Detail(ctx *gin.Context) {
 
 }
 
+// 查看已发布的帖子
 func (a *ArticleHandler) PubDetail(ctx*gin.Context) {
 	idStr := ctx.Param("id")
 	//复习 strconv了   字符转换标准库。  字符串转向其他对象
 	id, err := strconv.ParseInt(idStr, 10, 64)
+
 	if err != nil {
 		ctx.JSON(http.StatusOK,Result{
 			Msg: "id参数不对",
@@ -228,31 +242,107 @@ func (a *ArticleHandler) PubDetail(ctx*gin.Context) {
 		)
 		return
 	}
+	var (
+		eg errgroup.Group
+		art domain.Article
+		intr domain.Interactive
+	)
 
-	art, err := a.svc.GetPubById(ctx, id)
-	if err != nil {
-		ctx.JSON(http.StatusOK,Result{
-			Code: 5,
-			Msg: "系统错误",
-		})
-		a.l.Error("查询已发布的文章失败，系统错误",loggerDefine.Error(err),
-			loggerDefine.Int64("id",id))
-	}
-	vo := ArticleVo{
-		Id: art.Id,
-		Title: art.Title,
-		Content: art.Content,
-		AuthorId: art.Author.Id,
-		// 在Article dao没有作者名称，可以选择在 Repo层做处理
-		AuthorName: art.Author.Name,
-		Status: art.Status.ToUint8(),
-		Ctime: art.Ctime.Format(time.DateTime),
-		Utime: art.Utime.Format(time.DateTime),
-	}
+	eg.Go(func() error {
+		var er error
+		art, er = a.svc.GetPubById(ctx, id)
+		if er != nil {
+			ctx.JSON(http.StatusOK,Result{
+				Code: 5,
+				Msg: "系统错误",
+			})
+			a.l.Error("查询已发布的文章失败，系统错误",loggerDefine.Error(er),
+				loggerDefine.Int64("id",id))
+		}
+		return er
+	})
+    uc := ctx.MustGet("user").(ijwt.UserClaims)
+	// 这里可以做降级？
+	eg.Go(func() error {
+        var er error
+		intr,er = a.interSvc.Get(ctx,a.biz,id,uc.Uid)
+        return er
+
+	})
+
+    eg.Wait()
+	// 顺带实现走异步
+	go func() {
+		//log.Println("异步更新缓存的阅读数了吗")
+		newCtx,cancel := context.WithTimeout(context.Background(),time.Second * 2)
+		defer cancel()
+		er := a.interSvc.IncrReadCnt(newCtx,a.biz,art.Id)
+		if er != nil {
+		    a.l.Error("更新阅读数失败",
+				loggerDefine.Int64("aid",art.Id),
+				loggerDefine.Error(er),)
+		}
+		log.Println("异步更新缓存的阅读数er : ",er)
+	}()
+
+	log.Println("web art.Author.Id is xxx  ",art.Author.Id)
+
 
 	ctx.JSON(http.StatusOK,Result{
 		Code: 2,
-		Data: vo,
+		Data: ArticleVo{
+			Id: art.Id,
+			Title: art.Title,
+			Content: art.Content,
+			AuthorId: art.Author.Id,
+			// 在Article dao没有作者名称，可以选择在 Repo层做处理
+			AuthorName: art.Author.Name,
+			Status: art.Status.ToUint8(),
+			Ctime: art.Ctime.Format(time.DateTime),
+			Utime: art.Utime.Format(time.DateTime),
+			Liked: intr.Liked,
+			Collected: intr.Collected,
+			ReadCnt: intr.ReadCnt,
+			CollectCnt: intr.CollectCnt,
+			LikeCnt: intr.LikeCnt,
+		},
 	})
+}
 
+func (a *ArticleHandler) Like(ctx *gin.Context,req LikeReq,uc ijwt.UserClaims) (ginx.Result,error){
+	// 在web层面就是可以区分前端的不同请求
+	var err error
+	if req.Like {
+		  err = a.interSvc.Like(ctx,a.biz,req.Id,uc.Uid)
+	  } else {
+		  err = a.interSvc.CancelLike(ctx,a.biz,req.Id,uc.Uid)
+	  }
+
+	if err != nil {
+		return  ginx.Result{
+			Code: 5,
+			Msg: "系统错误",
+		},err
+	}
+
+	return ginx.Result{
+		Msg:"OK",
+
+	},nil
+
+}
+
+func (a *ArticleHandler) Collect(ctx *gin.Context, req CollectReq, uc ijwt.UserClaims) (ginx.Result, error) {
+    // 比较好的竞品的收藏功能是csdn的收藏，前端传入帖子id和收藏夹id、  目前版本实际上不处理收藏夹id.
+	err := a.interSvc.Collect(ctx, a.biz,req.Id, req.Cid, uc.Uid)
+	if err != nil {
+		return ginx.Result{
+			Code: 5,
+			Msg: "系统错误",
+		},err
+	}
+
+	return ginx.Result{
+		Data: "ok",
+	},nil
 }
