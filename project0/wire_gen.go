@@ -4,11 +4,11 @@
 //go:build !wireinject
 // +build !wireinject
 
-package wire
+package main
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
+	"project0/internal/events/article"
 	"project0/internal/repository"
 	"project0/internal/repository/cache"
 	"project0/internal/repository/dao"
@@ -19,10 +19,14 @@ import (
 	"project0/ioc"
 )
 
+import (
+	_ "github.com/spf13/viper/remote"
+)
+
 // Injectors from wire.go:
 
 // 首要的main先初始化webServer
-func InitWebServerJ() *gin.Engine {
+func InitWebServerJ() *App {
 	cmdable := ioc.InitRedis()
 	handler := ijwt.NewRedisJWTHandler(cmdable)
 	loggerV1 := ioc.InitLogger()
@@ -44,14 +48,23 @@ func InitWebServerJ() *gin.Engine {
 	articleDao := dao.NewArticleGROMDAO(db)
 	articleCache := cache.NewArticleRedisCache(cmdable)
 	articleRepository := repository.NewCacheArticleRepository(articleDao, articleCache, userDao)
-	articleService := service.NewArticleService(articleRepository)
+	client := ioc.InitSaramaClient()
+	syncProducer := ioc.InitSyncProducer(client)
+	producer := article.NewSaramaSyncProducer(syncProducer)
+	articleService := service.NewArticleService(articleRepository, producer)
 	interactiveCache := cache.NewInteractiveCache(cmdable)
 	interactiveDAO := dao.NewInteractiveGORMDAO(db)
 	interactiveRepository := repository.NewCacheInteractiveRepository(interactiveCache, interactiveDAO)
 	interactiveService := service.NewInteractiveService(interactiveRepository)
 	articleHandler := web.NewArticleHandler(articleService, loggerV1, interactiveService)
 	engine := ioc.InitWebServer(v, userHandler, oAuth2Handler, articleHandler)
-	return engine
+	interactiveReadEventConsumer := article.NewInteractiveReadEventConsumer(interactiveRepository, client, loggerV1)
+	v3 := ioc.InitConsumers(interactiveReadEventConsumer)
+	app := &App{
+		server:    engine,
+		consumers: v3,
+	}
+	return app
 }
 
 func InitResponseTimeFailover() *failover.ResponseTimeFailover {

@@ -9,6 +9,7 @@ package startup
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
+	"project0/internal/events/article"
 	"project0/internal/repository"
 	"project0/internal/repository/cache"
 	"project0/internal/repository/dao"
@@ -41,23 +42,32 @@ func InitWebServerJ() *gin.Engine {
 	wechatService := InitWechatService(loggerV1)
 	oAuth2Handler := web.NewOAuth2Handler(wechatService, userService, handler)
 	articleDao := dao.NewArticleGROMDAO(db)
-	articleRepository := repository.NewCacheArticleRepository(articleDao)
-	articleService := service.NewArticleService(articleRepository)
-	articleHandler := web.NewArticleHandler(articleService, loggerV1)
+	articleHandler := InitArticleHandler(articleDao)
 	engine := ioc.InitWebServer(v, userHandler, oAuth2Handler, articleHandler)
 	return engine
 }
 
-func InitArticleHandler(dao2 dao.ArticleDao) *web.ArticleHandler {
-	articleRepository := repository.NewCacheArticleRepository(dao2)
-	articleService := service.NewArticleService(articleRepository)
+func InitArticleHandler(daoArt dao.ArticleDao) *web.ArticleHandler {
+	cmdable := InitRedis()
+	articleCache := cache.NewArticleRedisCache(cmdable)
+	db := InitDB()
+	userDao := dao.NewUserDAO(db)
+	articleRepository := repository.NewCacheArticleRepository(daoArt, articleCache, userDao)
+	client := InitSaramaClient()
+	syncProducer := InitSyncProducer(client)
+	producer := article.NewSaramaSyncProducer(syncProducer)
+	articleService := service.NewArticleService(articleRepository, producer)
 	loggerV1 := InitLogger()
-	articleHandler := web.NewArticleHandler(articleService, loggerV1)
+	interactiveCache := cache.NewInteractiveCache(cmdable)
+	interactiveDAO := dao.NewInteractiveGORMDAO(db)
+	interactiveRepository := repository.NewCacheInteractiveRepository(interactiveCache, interactiveDAO)
+	interactiveService := service.NewInteractiveService(interactiveRepository)
+	articleHandler := web.NewArticleHandler(articleService, loggerV1, interactiveService)
 	return articleHandler
 }
 
 // wire.go:
 
 var thirdPartySet = wire.NewSet(
-	InitDB, InitRedis, InitLogger, ioc.InitRedisLimiter, ioc.NewSMSS,
+	InitDB, InitRedis, InitLogger, ioc.InitRedisLimiter, ioc.NewSMSS, InitSaramaClient, InitSyncProducer,
 )

@@ -39,6 +39,9 @@ type ArticleGROMDAO struct {
 	db *gorm.DB
 }
 
+func NewArticleGROMDAO(db *gorm.DB) ArticleDao{
+	return &ArticleGROMDAO{db: db}
+}
 func (a *ArticleGROMDAO) GetPubById(ctx context.Context, id int64) (PublishedArticle, error) {
 	var  art PublishedArticle
 	// first默认应该是按什么顺序查找呢
@@ -61,9 +64,7 @@ func (a *ArticleGROMDAO) GetByAuthor(ctx context.Context, uid int64, offset int,
 	return  arts ,err
 }
 
-func NewArticleGROMDAO(db *gorm.DB) ArticleDao{
-	return &ArticleGROMDAO{db: db}
-}
+
 
 func (a *ArticleGROMDAO) SyncStatus(ctx context.Context, id int64, uid int64, status uint8) error {
 	// 同步状态需要同步时间

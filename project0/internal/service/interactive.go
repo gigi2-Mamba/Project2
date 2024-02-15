@@ -22,6 +22,10 @@ type interactiveService struct {
 	repo repository.InteractiveRepository
 }
 
+func NewInteractiveService(repo repository.InteractiveRepository) InteractiveService {
+	return &interactiveService{repo: repo}
+}
+
 // 获取互动数据
 func (i *interactiveService) Get(ctx context.Context, biz string, id int64, uid int64) (domain.Interactive, error) {
 	//互动详情总数
@@ -62,9 +66,6 @@ func (i *interactiveService) Like(ctx context.Context,biz string, id int64, uid 
 	return  i.repo.IncrLikeCnt(ctx,biz,id,uid)
 }
 
-func NewInteractiveService(repo repository.InteractiveRepository) InteractiveService {
-	return &interactiveService{repo: repo}
-}
 
 func (i *interactiveService) IncrReadCnt(ctx context.Context, biz string, bizId int64) error {
 	return i.repo.IncrReadCnt(ctx, biz, bizId)

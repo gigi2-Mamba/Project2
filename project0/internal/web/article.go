@@ -247,10 +247,10 @@ func (a *ArticleHandler) PubDetail(ctx*gin.Context) {
 		art domain.Article
 		intr domain.Interactive
 	)
-
+	uc := ctx.MustGet("user").(ijwt.UserClaims)
 	eg.Go(func() error {
 		var er error
-		art, er = a.svc.GetPubById(ctx, id)
+		art, er = a.svc.GetPubById(ctx, id,uc.Uid)
 		if er != nil {
 			ctx.JSON(http.StatusOK,Result{
 				Code: 5,
@@ -261,7 +261,7 @@ func (a *ArticleHandler) PubDetail(ctx*gin.Context) {
 		}
 		return er
 	})
-    uc := ctx.MustGet("user").(ijwt.UserClaims)
+
 	// 这里可以做降级？
 	eg.Go(func() error {
         var er error

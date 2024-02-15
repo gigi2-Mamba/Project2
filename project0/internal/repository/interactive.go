@@ -88,7 +88,6 @@ func NewCacheInteractiveRepository(cache cache.InteractiveCache, dao dao.Interac
 	return &CacheInteractiveRepository{cache: cache, dao: dao}
 }
 
-
 func (c *CacheInteractiveRepository) AddCollectItem(ctx context.Context, biz string,id,cid ,uid int64) error {
 	err := c.dao.InsertCollectInfo(ctx,dao.UserCollectBiz{
 		Biz: biz,
@@ -120,7 +119,6 @@ func (c *CacheInteractiveRepository) DecrLikeCnt(ctx context.Context,biz string,
 
 	return c.cache.DecrLikeCnt(ctx,biz,id,uid)
 }
-
 
 func (c *CacheInteractiveRepository) IncrReadCnt(ctx context.Context, biz string, bizId int64) error {
   // 统计阅读书应该先走数据库

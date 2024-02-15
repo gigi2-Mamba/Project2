@@ -1,14 +1,14 @@
 //go:build wireinject
 
-package wire
+package main
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
-	 "project0/internal/repository"
-	 "project0/internal/repository/cache"
+	"project0/internal/events/article"
+	"project0/internal/repository"
+	"project0/internal/repository/cache"
 	"project0/internal/repository/dao"
-	 "project0/internal/service"
+	"project0/internal/service"
 	"project0/internal/service/sms/failover"
 	"project0/internal/web"
 	"project0/internal/web/ijwt"
@@ -20,14 +20,17 @@ var interactiveSvcSet	= wire.NewSet(
 	service.NewInteractiveService,repository.NewCacheInteractiveRepository,
 	cache.NewInteractiveCache,dao.NewInteractiveGORMDAO,)
 // 首要的main先初始化webServer
-func InitWebServerJ() *gin.Engine {
+func InitWebServerJ() *App {
 	wire.Build(
 		//第三方依赖，组装最基本单元
 		ioc.InitDB, ioc.InitRedis,
 		//Response time trigger limiter    & 增加冗余
 		ioc.InitRedisLimiter,ioc.NewSMSS,
+		ioc.InitSaramaClient,ioc.InitSyncProducer,
+		ioc.InitConsumers,
 		// DAO
 		interactiveSvcSet,
+		article.NewSaramaSyncProducer,article.NewInteractiveReadEventConsumer,
 		dao.NewUserDAO,dao.NewArticleGROMDAO,
 		// cache
 		cache.NewUserCache, cache.NewCodeCache,cache.NewArticleRedisCache,
@@ -51,8 +54,10 @@ func InitWebServerJ() *gin.Engine {
 
 		ioc.InitGinMiddlewares,
 		ioc.InitWebServer,
+		// wire大结局，一个app代表整个应用
+		wire.Struct(new(App),"*"),
 	)
-	return gin.Default()
+	return new(App)
 
 }
 

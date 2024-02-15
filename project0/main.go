@@ -1,19 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"github.com/fsnotify/fsnotify"
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/redis"
-	"github.com/gin-gonic/gin"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	_ "github.com/spf13/viper/remote"
 	"go.uber.org/zap"
 	"log"
 	"project0/internal/service/sms/failover"
-	"project0/internal/web/middlewares"
-	"project0/wire"
 	"time"
 )
 
@@ -137,7 +131,17 @@ func main() {
 		log.Println("panic in readconfig")
 		panic(err)
 	}
-	server := wire.InitWebServerJ()
+
+	app :=InitWebServerJ()
+	for _,c := range app.consumers {
+		err := c.Start()
+		if err != nil {
+			panic(err)
+		}
+
+	}
+	server := app.server
+	//server := wire.InitWebServerJ()
 	//server.GET("/hello", func(context *gin.Context) {
 	//	context.String(http.StatusOK, "hello  k8s   部署成功了")
 	//})
@@ -148,30 +152,36 @@ func main() {
 	//})
 	//initUserHdl(mysqlInit.Db, server)
 
-	go failover.AsyncSendCode(wire.InitResponseTimeFailover())
+	go failover.AsyncSendCode(InitResponseTimeFailover())
 	server.Run(":8083")
 }
 
 
+type Bpp struct {
+
+}
+
+
+
 
 // session 和 jwt可以交替使用
-func useSession(server *gin.Engine) {
-
-	login := &middlewares.LoginMiddlewareBuilder{}
-	// 先初始化 存储数据,直接存cookie作教学
-	//store := cookie.NewStore([]byte("secret"))
-	//  注意localhost  是否讲得通 ubuntu ,  两个密钥 Authentication, encryption  身份验证，数据加密，授予权限
-	// store 面向接口编程
-	// gin的redis模块不走client,直接走NewStore 来存储  tbc复杂的设计
-	store, err := redis.NewStore(16, "tcp",
-		"localhost:6379", "",
-		[]byte("oDhIbNhVlYcOtAqNvVaMlFbQrDdObWqT"),
-		[]byte("oDhIbNhVlYcOtAqNvVaMlFbQrDdObWxT"))
-	fmt.Println("store err,session err: ", err, store)
-	//handlerFunc := sessions.Sessions("ssid", store)
-	server.Use(sessions.Sessions("ssig", store), login.CheckLogin())
-	log.Println("can here?  ")
-	if err != nil {
-		panic(err)
-	}
-}
+//func useSession(server *gin.Engine) {
+//
+//	login := &middlewares.LoginMiddlewareBuilder{}
+//	// 先初始化 存储数据,直接存cookie作教学
+//	//store := cookie.NewStore([]byte("secret"))
+//	//  注意localhost  是否讲得通 ubuntu ,  两个密钥 Authentication, encryption  身份验证，数据加密，授予权限
+//	// store 面向接口编程
+//	// gin的redis模块不走client,直接走NewStore 来存储  tbc复杂的设计
+//	store, err := redis.NewStore(16, "tcp",
+//		"localhost:6379", "",
+//		[]byte("oDhIbNhVlYcOtAqNvVaMlFbQrDdObWqT"),
+//		[]byte("oDhIbNhVlYcOtAqNvVaMlFbQrDdObWxT"))
+//	fmt.Println("store err,session err: ", err, store)
+//	//handlerFunc := sessions.Sessions("ssid", store)
+//	server.Use(sessions.Sessions("ssig", store), login.CheckLogin())
+//	log.Println("can here?  ")
+//	if err != nil {
+//		panic(err)
+//	}
+//}

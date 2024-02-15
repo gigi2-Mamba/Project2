@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"project0/internal/domain"
+	"project0/internal/events/article"
 	"project0/internal/repository"
 	"project0/pkg/loggerDefine"
 )
@@ -16,29 +17,50 @@ type ArticleService interface {
 	Withdraw(ctx context.Context, uid int64, id int64) error
 	GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]domain.Article,error)
 	GetById(ctx context.Context, id int64) (domain.Article,error)
-	GetPubById(ctx context.Context, id int64) (domain.Article,error)
-	
+	GetPubById(ctx context.Context, id,uid int64) (domain.Article,error)
 
 }
 
 type articleService struct {
 	repo repository.ArticleRepository
-
+	producer article.Producer
 	// service层分发制作库和线上库  v1写法
 	readerRepo repository.ArticleReaderRepository
 	authorRepo repository.ArticleAuthorRepository
 	l          loggerDefine.LoggerV1
 }
 
-func (a *articleService) GetPubById(ctx context.Context, id int64) (domain.Article, error) {
+func NewArticleService(repo repository.ArticleRepository,producer article.Producer) ArticleService {
+	return &articleService{
+		repo: repo,
+		producer: producer}
+}
+func (a *articleService) GetPubById(ctx context.Context, id,uid int64) (domain.Article, error) {
 	// 如何是微服务版本，可以直接调用其他服务来补全前端确实的领域信息
 	//log.Println("(a *articleService) GetPubById ",id)
-	return a.repo.GetPubById(ctx,id)
+
+	art, err := a.repo.GetPubById(ctx, id)
+	// 在这里决定，发送一条消息给kafka.  这么一看没什么用？ 
+	if err == nil {
+
+		go func() {
+			er := a.producer.ProduceReadEvent(article.ReadEvent{
+				Aid: id,
+				Uid: uid,
+			})
+			if er != nil {
+				a.l.Error("发送readEvent失败",
+					loggerDefine.Int64("aid",id),
+					loggerDefine.Int64("uid",uid))
+			}
+		}()
+	}
+	return art,nil
 }
 
 func (a *articleService) GetById(ctx context.Context, id int64) (domain.Article, error) {
 
-	return a.repo.GetById(ctx, id)
+	return  a.repo.GetById(ctx, id)
 }
 
 func (a *articleService) GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]domain.Article, error) {
@@ -46,9 +68,7 @@ func (a *articleService) GetByAuthor(ctx context.Context, uid int64, offset int,
 	return  a.repo.GetByAuthor(ctx, uid, offset, limit)
 }
 
-func NewArticleService(repo repository.ArticleRepository) ArticleService {
-	return &articleService{repo: repo}
-}
+
 
 func (a *articleService) Withdraw(ctx context.Context, uid int64, id int64) error {
 	return a.repo.SyncStatus(ctx, id, uid, domain.ArticleStatusPrivate)

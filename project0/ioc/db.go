@@ -30,21 +30,15 @@ func InitDB(l loggerDefine.LoggerV1) *gorm.DB {
 		//},),
 
 		})
-
-
-
 	//Db.Callback().Query().Before("gorm:query").Register("my_plugin:sql_logger", func(db *gorm.DB) {
 	//	fmt.Println(db.Statement.SQL)
 	//})
-	//Db.l
 	//Db.Set("CONNECT_TIMEOUT", 30*time.Second)
-    //log.Println("dsn: ",dsn)
 	if err != nil {
 		fmt.Println("db连接失败，error= ", err.Error())
 		panic(err)
 	}
 	return Db
-
 }
 
 // 函数延伸类型实现接口

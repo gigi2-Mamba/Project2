@@ -1,6 +1,9 @@
 test:
   value1: 123456gffggggg
 db:
-  dsn: "root:root@tcp(localhost:13316)/webook?charset=utf8mb4&parseTime=True"
+  dsn: "root:root@tcp(172.27.19.245:13316)/webook?charset=utf8mb4&parseTime=True"
 redis:
   addr: "localhost:6379"
+kafka:
+  addr:
+    - "172.27.19.245:9094"
