@@ -52,7 +52,7 @@ func InitGinMiddlewares(redisClient redis.Cmdable,Hdl ijwt.Handler,l loggerDefin
 			//jwt token是短token,refresh token 是长token
 			ExposeHeaders: []string{"x-jwt-token","x-refresh-token"},
 		}), func(context *gin.Context) {
-			log.Println("跨域通过middleware")
+			//log.Println("跨域通过middleware")
 		},
 		ratelimit.NewBuilder(limiter.NewRedisSlideWindowLimiter(redisClient, time.Second, 1000)).Build(),
 		middlewares.NewLogMiddlewareBuilder(func(ctx context.Context, al middlewares.AccessLog) {

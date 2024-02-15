@@ -35,6 +35,7 @@ func (r *ArticleRedisCache) GetPub(ctx context.Context, id int64) (domain.Articl
 	//log.Println("GetPub key",key)
 	val,err := r.client.Get(ctx, key).Bytes()
 	if err != nil {
+		log.Println("ArticleRedisCache get pub  error : ",err)
 		return domain.Article{}, err
 	}
 	var res domain.Article

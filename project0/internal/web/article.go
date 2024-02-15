@@ -1,7 +1,6 @@
 package web
 
 import (
-	"context"
 	"github.com/ecodeclub/ekit/slice"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/sync/errgroup"
@@ -262,6 +261,7 @@ func (a *ArticleHandler) PubDetail(ctx*gin.Context) {
 		return er
 	})
 
+	//获取互动数据
 	// 这里可以做降级？
 	eg.Go(func() error {
         var er error
@@ -272,18 +272,20 @@ func (a *ArticleHandler) PubDetail(ctx*gin.Context) {
 
     eg.Wait()
 	// 顺带实现走异步
-	go func() {
-		//log.Println("异步更新缓存的阅读数了吗")
-		newCtx,cancel := context.WithTimeout(context.Background(),time.Second * 2)
-		defer cancel()
-		er := a.interSvc.IncrReadCnt(newCtx,a.biz,art.Id)
-		if er != nil {
-		    a.l.Error("更新阅读数失败",
-				loggerDefine.Int64("aid",art.Id),
-				loggerDefine.Error(er),)
-		}
-		log.Println("异步更新缓存的阅读数er : ",er)
-	}()
+	//go func() {
+	//	//log.Println("异步更新缓存的阅读数了吗")
+	//	newCtx,cancel := context.WithTimeout(context.Background(),time.Second * 2)
+	//	defer cancel()
+	//	er := a.interSvc.IncrReadCnt(newCtx,a.biz,art.Id)
+	//	if er != nil {
+	//	    a.l.Error("更新阅读数失败",
+	//			loggerDefine.Int64("aid",art.Id),
+	//			loggerDefine.Error(er),)
+	//	}
+	//	log.Println("异步更新缓存的阅读数er : ",er)
+	//}()
+
+	//time.Sleep(1e9)
 
 	log.Println("web art.Author.Id is xxx  ",art.Author.Id)
 

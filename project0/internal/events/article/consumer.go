@@ -3,6 +3,7 @@ package article
 import (
 	"context"
 	"github.com/IBM/sarama"
+	"log"
 	"project0/internal/repository"
 	"project0/pkg/loggerDefine"
 	"project0/pkg/saramax"
@@ -26,27 +27,33 @@ func NewInteractiveReadEventConsumer(repo repository.InteractiveRepository, clie
 }
 
 func (i *InteractiveReadEventConsumer) Start() error {
-     cg,err :=sarama.NewConsumerGroupFromClient("article_read",i.client)
+     cg,err :=sarama.NewConsumerGroupFromClient("interactive",i.client)
 	//cg,err :=sarama.NewConsumerGroup(i.client)
 	if err != nil {
 		return err
 	}
 	
 	go func() {
-		//ctx,cancel := context.
-		er := cg.Consume(context.Background(), []string{TopicReadEvent}, saramax.NewHandler[ReadEvent](i.Consume, i.l))
-		if er != nil {
-			i.l.Error("退出消费",loggerDefine.Error(er),
+		for {
+			//ctx,cancel := context.
+			log.Println("should start  consume")
+			er := cg.Consume(context.Background(), []string{TopicReadEvent}, saramax.NewHandler[ReadEvent](i.l,i.Consume, ))
+			log.Println("actual consume")
+			if er != nil {
+				i.l.Error("退出消费", loggerDefine.Error(er),
 				)
+			}
 		}
-	}()
+		}()
+
 
 	return err
 }
 
 func (i *InteractiveReadEventConsumer) Consume(msg *sarama.ConsumerMessage,evt  ReadEvent) error {
-    ctx,cancel := context.WithTimeout(context.Background(),time.Second *2)
+    ctx,cancel := context.WithTimeout(context.Background(),time.Second *6)
 	defer cancel()
+	log.Println("can't not here so far")
 	return i.repo.IncrReadCnt(ctx, "article", evt.Aid)
 }
 

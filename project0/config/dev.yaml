@@ -1,5 +1,5 @@
 test:
-  value1: 123456gffggggg
+  value1: 123456g
 db:
   dsn: "root:root@tcp(172.27.19.245:13316)/webook?charset=utf8mb4&parseTime=True"
 redis:

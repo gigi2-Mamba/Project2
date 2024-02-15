@@ -126,7 +126,8 @@ func main() {
 	//	//log.Println("mysqlInit init success")
 	//	server := initWebServer()
 
-	err := initViperWatchRemote()
+	//err := initViperWatchRemote()
+	err := initViperV1()
 	if err != nil {
 		log.Println("panic in readconfig")
 		panic(err)
@@ -134,11 +135,11 @@ func main() {
 
 	app :=InitWebServerJ()
 	for _,c := range app.consumers {
+		//log.Println("consumer is : ",c)
 		err := c.Start()
 		if err != nil {
 			panic(err)
 		}
-
 	}
 	server := app.server
 	//server := wire.InitWebServerJ()

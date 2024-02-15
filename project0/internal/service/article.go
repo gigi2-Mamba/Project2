@@ -38,12 +38,14 @@ func NewArticleService(repo repository.ArticleRepository,producer article.Produc
 func (a *articleService) GetPubById(ctx context.Context, id,uid int64) (domain.Article, error) {
 	// 如何是微服务版本，可以直接调用其他服务来补全前端确实的领域信息
 	//log.Println("(a *articleService) GetPubById ",id)
-
+    // 这里只是获取整个帖子的详情
 	art, err := a.repo.GetPubById(ctx, id)
-	// 在这里决定，发送一条消息给kafka.  这么一看没什么用？ 
+	// 在这里决定，发送一条消息给kafka.  这么一看没什么用？
 	if err == nil {
-
+        log.Println("发送消息给kafka ")
 		go func() {
+			log.Println("接下来发送信息")
+
 			er := a.producer.ProduceReadEvent(article.ReadEvent{
 				Aid: id,
 				Uid: uid,

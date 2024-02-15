@@ -37,7 +37,7 @@ type CacheArticleRepository struct {
 func (c *CacheArticleRepository) GetPubById(ctx context.Context, id int64) (domain.Article, error) {
 	res, err := c.cache.GetPub(ctx, id)
 	if err == nil {
-		//log.Println("获取到了缓存？？")
+		log.Println("(c *CacheArticleRepository) GetPubById： 获取到了缓存")
 		return res, nil
 	} else {
 		//日志记录

@@ -5,7 +5,6 @@ import (
 	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"log"
 	"project0/pkg/loggerDefine"
 )
 
@@ -20,7 +19,7 @@ func InitDB(l loggerDefine.LoggerV1) *gorm.DB {
 	}
 	var d dcfg
 	viper.UnmarshalKey("db",&d,)
-	log.Println(" xxxxx ",d.Dsn)
+	//log.Println(" can out put db ",d.Dsn)
 	// Option... 结构， 无限填充
 	Db, err := gorm.Open(mysql.Open(d.Dsn), &gorm.Config{
 		//Logger: glogger.New(gormLoggerFunc(l.Debug),glogger.Config{
