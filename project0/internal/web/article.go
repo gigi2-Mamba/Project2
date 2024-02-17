@@ -285,10 +285,7 @@ func (a *ArticleHandler) PubDetail(ctx*gin.Context) {
 	//	log.Println("异步更新缓存的阅读数er : ",er)
 	//}()
 
-	//time.Sleep(1e9)
-
 	log.Println("web art.Author.Id is xxx  ",art.Author.Id)
-
 
 	ctx.JSON(http.StatusOK,Result{
 		Code: 2,

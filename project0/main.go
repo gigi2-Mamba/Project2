@@ -2,11 +2,13 @@ package main
 
 import (
 	"github.com/fsnotify/fsnotify"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	_ "github.com/spf13/viper/remote"
 	"go.uber.org/zap"
 	"log"
+	"net/http"
 	"project0/internal/service/sms/failover"
 	"time"
 )
@@ -83,7 +85,6 @@ func initViperWatchRemote() error {
 			time.Sleep(10e9)
 		}
 	}()
-
    return nil
 }
 
@@ -117,7 +118,13 @@ func InitLogger()  {
 	// 用自定义的logger代替全局logger
 	zap.ReplaceGlobals(logger)
 }
+func InitPrometheus()  {
+	go func() {
+		http.Handle("/metrics",promhttp.Handler())
+		http.ListenAndServe(":8081", nil)
+	}()
 
+}
 func main() {
 	//server := wire.InitWebServerJ()	//err := mysqlInit.Init()
 	//	//if err != nil {
@@ -125,15 +132,16 @@ func main() {
 	//	//}
 	//	//log.Println("mysqlInit init success")
 	//	server := initWebServer()
-
 	//err := initViperWatchRemote()
 	err := initViperV1()
+	InitLogger()
 	if err != nil {
 		log.Println("panic in readconfig")
 		panic(err)
 	}
 
 	app :=InitWebServerJ()
+	InitPrometheus()
 	for _,c := range app.consumers {
 		//log.Println("consumer is : ",c)
 		err := c.Start()
@@ -152,18 +160,9 @@ func main() {
 	//	context.String(http.StatusOK, "设置cookie成功？")
 	//})
 	//initUserHdl(mysqlInit.Db, server)
-
 	go failover.AsyncSendCode(InitResponseTimeFailover())
 	server.Run(":8083")
 }
-
-
-type Bpp struct {
-
-}
-
-
-
 
 // session 和 jwt可以交替使用
 //func useSession(server *gin.Engine) {

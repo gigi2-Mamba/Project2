@@ -17,6 +17,7 @@ services:
 
   redis:
     image: "bitnami/redis:latest"
+#    container_name: internal-redis-1
     restart: always
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
@@ -31,7 +32,14 @@ services:
 #      - ALLOW_NON_AUTHENTICATION=yes
 #    ports:
 #      - "12379:2379"
-
+  prometheus:
+    container_name: we-prometheus
+    restart: on-failure
+    image: prom/prometheus:v2.47.2
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - 9090:9090
   etcd:
     container_name:  project0_etcd_1
     image: "bitnami/etcd:3.5.9"
@@ -58,6 +66,7 @@ services:
   kafka:
     image: 'bitnami/kafka:3.6.0'
     container_name: we-kafka
+    restart: on-failure
     ports:
       - '9092:9092'
       - '9094:9094'

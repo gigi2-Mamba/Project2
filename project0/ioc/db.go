@@ -2,9 +2,12 @@ package ioc
 
 import (
 	"fmt"
+	prometheus2 "github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/plugin/prometheus"
+	"project0/pkg/gormx"
 	"project0/pkg/loggerDefine"
 )
 
@@ -33,10 +36,49 @@ func InitDB(l loggerDefine.LoggerV1) *gorm.DB {
 	//	fmt.Println(db.Statement.SQL)
 	//})
 	//Db.Set("CONNECT_TIMEOUT", 30*time.Second)
+
 	if err != nil {
 		fmt.Println("db连接失败，error= ", err.Error())
 		panic(err)
 	}
+
+	// GORM自带的把控连接
+	Db.Use(prometheus.New(prometheus.Config{
+		DBName: "webook",
+		RefreshInterval: 15,
+		MetricsCollector: []prometheus.MetricsCollector{
+			&prometheus.MySQL{
+				//一般都没什么卵用
+				VariableNames: []string{"thread_running"},
+			},
+		},
+	}))
+	if err != nil {
+		panic(err)
+	}
+
+	cb := gormx.NewCallbacks(prometheus2.SummaryOpts{
+		Namespace: "society_pay",
+		Subsystem: "webook",
+		Name:      "gorm_db",
+		Help:      "统计 GORM 的数据库查询",
+		ConstLabels: map[string]string{
+			"instance_id": "my_instance",
+		},
+		Objectives: map[float64]float64{
+			0.5:   0.01,
+			0.75:  0.01,
+			0.9:   0.01,
+			0.99:  0.001,
+			0.999: 0.0001,
+		},
+	})
+
+	err = Db.Use(cb)
+	if err != nil {
+		panic(err)
+	}
+
 	return Db
 }
 

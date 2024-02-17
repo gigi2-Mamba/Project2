@@ -32,10 +32,15 @@ type InteractiveCache interface {
 	IncrCollectCnt(ctx context.Context, biz string, id int64) error
 	Get(ctx context.Context, biz string, id int64) (domain.Interactive, error)
 	Set(ctx context.Context, biz string, id int64, res domain.Interactive) error
+	ReadArticleHistory(ctx context.Context, record domain.ReadHistoryRecord) error
 }
 
 type interactiveCache struct {
 	client redis.Cmdable
+}
+// 用户个人观看历史记录
+func (i *interactiveCache) ReadArticleHistory(ctx context.Context, record domain.ReadHistoryRecord) error {
+	return nil
 }
 
 func (i *interactiveCache) Set(ctx context.Context, biz string, id int64, res domain.Interactive) error {
@@ -100,4 +105,8 @@ func (i *interactiveCache) IncrReadCntIFPresent(ctx context.Context, biz string,
 
 func (i *interactiveCache) Key(biz string, id int64) string {
 	return fmt.Sprintf("interactive:%s:%d", biz, id)
+}
+
+func (i *interactiveCache) HistoryKey(biz string, uid int64) string {
+	return fmt.Sprintf("%s:history:%d", biz, uid)
 }

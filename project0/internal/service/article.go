@@ -11,7 +11,6 @@ import (
 )
 
 type ArticleService interface {
-	//来了复习面向接口编程
 	Save(ctx context.Context, article domain.Article) (int64, error)
 	Publish(ctx context.Context, art domain.Article) (int64, error)
 	Withdraw(ctx context.Context, uid int64, id int64) error
@@ -36,16 +35,15 @@ func NewArticleService(repo repository.ArticleRepository,producer article.Produc
 		producer: producer}
 }
 func (a *articleService) GetPubById(ctx context.Context, id,uid int64) (domain.Article, error) {
-	// 如何是微服务版本，可以直接调用其他服务来补全前端确实的领域信息
+	// 如果是微服务版本，可以直接调用其他服务来补全前端缺失的领域信息
 	//log.Println("(a *articleService) GetPubById ",id)
     // 这里只是获取整个帖子的详情
 	art, err := a.repo.GetPubById(ctx, id)
 	// 在这里决定，发送一条消息给kafka.  这么一看没什么用？
 	if err == nil {
-        log.Println("发送消息给kafka ")
+        //log.Println("发送消息给kafka ")
 		go func() {
-			log.Println("接下来发送信息")
-
+			//log.Println("接下来发送信息")
 			er := a.producer.ProduceReadEvent(article.ReadEvent{
 				Aid: id,
 				Uid: uid,
@@ -135,7 +133,6 @@ func (a *articleService) PublishV1(ctx context.Context, art domain.Article) (int
 
 	return id, errors.New("保存到制作库成功但是线上库失败,重试耗尽")
 }
-
 // 共用同一个接口实现修改和新建
 func (a *articleService) Save(ctx context.Context, article domain.Article) (int64, error) {
 	article.Status = domain.ArticleStatusUnPublished

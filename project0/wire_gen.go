@@ -54,12 +54,15 @@ func InitWebServerJ() *App {
 	articleService := service.NewArticleService(articleRepository, producer)
 	interactiveCache := cache.NewInteractiveCache(cmdable)
 	interactiveDAO := dao.NewInteractiveGORMDAO(db)
-	interactiveRepository := repository.NewCacheInteractiveRepository(interactiveCache, interactiveDAO)
+	interactiveRepository := repository.NewCacheInteractiveRepository(interactiveCache, interactiveDAO, loggerV1)
 	interactiveService := service.NewInteractiveService(interactiveRepository)
 	articleHandler := web.NewArticleHandler(articleService, loggerV1, interactiveService)
 	engine := ioc.InitWebServer(v, userHandler, oAuth2Handler, articleHandler)
 	interactiveReadEventConsumer := article.NewInteractiveReadEventConsumer(interactiveRepository, client, loggerV1)
-	v3 := ioc.InitConsumers(interactiveReadEventConsumer)
+	historyDAO := dao.NewHistoryGORMDAO(db)
+	readHistoryRepository := repository.NewCacheArticleHistoryRepository(historyDAO, interactiveCache)
+	readHistoryConsumer := article.NewReadHistoryConsumer(readHistoryRepository, client, loggerV1)
+	v3 := ioc.InitConsumers(interactiveReadEventConsumer, readHistoryConsumer)
 	app := &App{
 		server:    engine,
 		consumers: v3,

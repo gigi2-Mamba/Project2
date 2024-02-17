@@ -30,14 +30,14 @@ func InitWebServerJ() *App {
 		ioc.InitConsumers,
 		// DAO
 		interactiveSvcSet,
-		article.NewSaramaSyncProducer,article.NewInteractiveReadEventConsumer,
-		dao.NewUserDAO,dao.NewArticleGROMDAO,
+		article.NewSaramaSyncProducer,article.NewInteractiveReadEventConsumer,article.NewReadHistoryConsumer,
+		dao.NewUserDAO,dao.NewArticleGROMDAO,dao.NewHistoryGORMDAO,
 		// cache
 		cache.NewUserCache, cache.NewCodeCache,cache.NewArticleRedisCache,
 		// Repository
 		// repository.NewUserRepository
 		repository.NewCacheUserRepository, repository.NewCodeRepository,repository.NewCacheArticleRepository,
-
+        repository.NewCacheArticleHistoryRepository,
 		// Service
 		//sms
 		ioc.InitLogger,

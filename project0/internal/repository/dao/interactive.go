@@ -52,6 +52,7 @@ type InteractiveDAO interface {
 	Get(ctx context.Context, biz string, id int64) (Interactive, error)
 	GetLikeInfo(ctx context.Context, biz string, id int64, uid int64) (UserLikeBiz,error)
 	GetCollectInfo(ctx context.Context, biz string, id int64, uid int64) (UserCollectBiz,error)
+	BatchIncrReadCnt(ctx context.Context, bizs []string, ids []int64) error
 }
 
 type InteractiveGORMDAO struct {
@@ -83,6 +84,7 @@ func (i *InteractiveGORMDAO) Get(ctx context.Context, biz string, id int64) (Int
 func NewInteractiveGORMDAO(db *gorm.DB) InteractiveDAO{
 	return &InteractiveGORMDAO{db: db}
 }
+
 func (i *InteractiveGORMDAO) InsertCollectInfo(ctx context.Context, collect UserCollectBiz) error {
 	now := time.Now().UnixMilli()
 	collect.Ctime = now
@@ -165,9 +167,18 @@ func (i *InteractiveGORMDAO) DecrLikeInfo(ctx context.Context, biz string, id in
 
 	})
 }
-
-
-
+func (i *InteractiveGORMDAO) BatchIncrReadCnt(ctx context.Context, bizs []string, ids []int64) error {
+	return i.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		txDAO := NewInteractiveGORMDAO(tx)
+		for i := 0; i < len(bizs); i++ {
+			err := txDAO.IncrReadCnt(ctx, bizs[i], ids[i])
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
 func (i *InteractiveGORMDAO) IncrReadCnt(ctx context.Context, biz string, id int64) error {
      now := time.Now().UnixMilli()
 	 //log.Println("biz ----",biz)

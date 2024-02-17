@@ -1,7 +1,6 @@
 package ioc
 
 import (
-	"context"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -9,8 +8,7 @@ import (
 	"project0/internal/web"
 	"project0/internal/web/ijwt"
 	"project0/internal/web/middlewares"
-	"project0/pkg/ginx/middleware/ratelimit"
-	"project0/pkg/limiter"
+	"project0/pkg/ginx/middleware/prometheus"
 	"project0/pkg/loggerDefine"
 	"strings"
 	"time"
@@ -28,7 +26,12 @@ func InitWebServer(mdls []gin.HandlerFunc, userHdl *web.UserHandler, wechatHdl *
 
 // 要使用基于redis的ratelimit，要加入redis.cmdable
 func InitGinMiddlewares(redisClient redis.Cmdable,Hdl ijwt.Handler,l loggerDefine.LoggerV1) []gin.HandlerFunc {
-
+      pb :=&prometheus.Builder{
+		  Namespace: "geektime_daming",
+		  Subsystem: "webook",
+		  Name:      "gin_http",
+		  Help:      "统计 GIN 的HTTP接口数据",
+	  }
 	return []gin.HandlerFunc{
 		cors.New(cors.Config{
 			AllowCredentials: true, // 允许携带cookie
@@ -54,10 +57,12 @@ func InitGinMiddlewares(redisClient redis.Cmdable,Hdl ijwt.Handler,l loggerDefin
 		}), func(context *gin.Context) {
 			//log.Println("跨域通过middleware")
 		},
-		ratelimit.NewBuilder(limiter.NewRedisSlideWindowLimiter(redisClient, time.Second, 1000)).Build(),
-		middlewares.NewLogMiddlewareBuilder(func(ctx context.Context, al middlewares.AccessLog) {
-			l.Debug("",loggerDefine.Field{Key: "req",Val: al})
-		}).AllowReqBody().AllowRespBody().Build(),
+		pb.BuildResponseTime(),
+		pb.BuildActiveRequest(),
+		//ratelimit.NewBuilder(limiter.NewRedisSlideWindowLimiter(redisClient, time.Second, 1000)).Build(),
+		//middlewares.NewLogMiddlewareBuilder(func(ctx context.Context, al middlewares.AccessLog) {
+		//	l.Debug("",loggerDefine.Field{Key: "req",Val: al})
+		//}).AllowReqBody().AllowRespBody().Build(),
 		middlewares.NewLoginJWTMiddlewareBuilder(Hdl).CheckLogin(),
 	}
 }

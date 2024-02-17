@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
-	"log"
 	"project0/internal/domain"
 	"time"
 )
@@ -59,9 +58,9 @@ func (dao *GORMUserDao) Insert(ctx context.Context, u User) (int64, error) {
 	u.Ctime = now
 	u.Utime = now
 	//log.Println("can here ")
-	log.Println("user whether is nil ", u)
+	//log.Println("user whether is nil ", u)
 	err := dao.db.WithContext(ctx).Create(&u).Error
-	log.Println("can here 2")
+	//log.Println("can here 2")
 	if me, ok := err.(*mysql.MySQLError); ok { // 驱动包的error
 		const duplicateErr uint16 = 1062
 		if me.Number == duplicateErr {

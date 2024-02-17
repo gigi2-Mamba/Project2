@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"log"
 	"project0/internal/domain"
 	"project0/internal/repository/cache"
 	"project0/internal/repository/dao"
@@ -21,6 +20,7 @@ type InteractiveRepository interface {
 	Get(ctx context.Context, biz string, id int64) (domain.Interactive,error)
 	Liked(ctx context.Context, biz string, id int64, uid int64) (bool,error)
 	Collected(ctx context.Context, biz string, id int64,uid int64) (bool,error)
+	BatchIncrReadCnt(ctx context.Context, bizs []string, bids []int64) error
 }
 
 // 操作缓存和持久
@@ -36,7 +36,7 @@ func (c *CacheInteractiveRepository) Get(ctx context.Context, biz string, id int
 
 		return intr,nil
 	}
-	log.Println("互动总数没有缓存")
+	//log.Println("互动总数没有缓存")
 	ie,err :=c.dao.Get(ctx,biz,id)
 
 	if err != nil {
@@ -84,8 +84,8 @@ func (c *CacheInteractiveRepository) Collected(ctx context.Context, biz string, 
 	}
 }
 
-func NewCacheInteractiveRepository(cache cache.InteractiveCache, dao dao.InteractiveDAO) InteractiveRepository {
-	return &CacheInteractiveRepository{cache: cache, dao: dao}
+func NewCacheInteractiveRepository(cache cache.InteractiveCache, dao dao.InteractiveDAO,l loggerDefine.LoggerV1) InteractiveRepository {
+	return &CacheInteractiveRepository{cache: cache, dao: dao,l: l}
 }
 
 func (c *CacheInteractiveRepository) AddCollectItem(ctx context.Context, biz string,id,cid ,uid int64) error {
@@ -128,6 +128,30 @@ func (c *CacheInteractiveRepository) IncrReadCnt(ctx context.Context, biz string
 	}
 	// 这时候要写缓存了
 	return c.cache.IncrReadCntIFPresent(ctx,biz,bizId)
+
+}
+
+func (c *CacheInteractiveRepository) BatchIncrReadCnt(ctx context.Context, bizs []string, bizIds []int64) error {
+	// 统计阅读书应该先走数据库
+	err := c.dao.BatchIncrReadCnt(ctx,bizs,bizIds)
+
+	if err != nil {
+		return err
+	}
+	// 这时候要写缓存了
+	// 复用原有单个增加阅读数的方法，redis可以顶得住。  差别不大
+	go func() {
+		for i := 0; i < len(bizs); i++ {
+             er := c.cache.IncrReadCntIFPresent(ctx,bizs[i],bizIds[i])
+			 if er != nil {
+				 c.l.Error("增加阅读数缓存失败,少一个两个无所谓？",loggerDefine.Error(er))
+			 }
+
+		}
+	}()
+
+
+	return nil
 
 }
 

@@ -1,0 +1,7 @@
+scrape_configs:
+  - job_name: "webook"
+    scrape_interval: 5s
+    scrape_timeout: 3s
+    static_configs:
+      - targets: ["172.27.19.245:8081"]
+#        这个targets就是见鬼一样   localhost?  host.docker.internal?

@@ -48,7 +48,8 @@ func InitSyncProducer(c sarama.Client) sarama.SyncProducer  {
 }
 
 // 因为wire很难找到同类注入，如同gin的中间件
-func InitConsumers(c1 *article.InteractiveReadEventConsumer) []events.Consumer {
+func InitConsumers(c1 *article.InteractiveReadEventConsumer,c2 *article.ReadHistoryConsumer) []events.Consumer {
 
-	return []events.Consumer{c1}
+	return []events.Consumer{c1,c2}
 }
+
