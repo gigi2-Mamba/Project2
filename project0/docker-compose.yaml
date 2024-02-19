@@ -51,7 +51,18 @@ services:
     ports:
       - 12379:2379
 
+  zipkin:
+    #    用的是不支持 Kafka 之类的简化版本
+    restart: on-failure
+    image: openzipkin/zipkin-slim:2.24
+    container_name: we-zipkin
+    ports:
+      - '9411:9411'
 
+  grafana:
+    image: grafana/grafana-enterprise:10.2.0
+    ports:
+      - 3000:3000
   mongo:
     image: "mongo:6.0"
 #    on-failure代表除了手动停止都会重启

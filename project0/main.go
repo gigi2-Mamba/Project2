@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/fsnotify/fsnotify"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/pflag"
@@ -10,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"project0/internal/service/sms/failover"
+	"project0/ioc"
 	"time"
 )
 
@@ -135,6 +137,13 @@ func main() {
 	//err := initViperWatchRemote()
 	err := initViperV1()
 	InitLogger()
+	tpCancel := ioc.InitOTEL()
+	defer func() {
+		ctx,cancel := context.WithTimeout(context.Background(),time.Second)
+		defer cancel()
+		tpCancel(ctx)
+
+	}()
 	if err != nil {
 		log.Println("panic in readconfig")
 		panic(err)

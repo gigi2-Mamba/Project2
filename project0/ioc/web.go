@@ -3,13 +3,16 @@ package ioc
 import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	prometheus2 "github.com/prometheus/client_golang/prometheus"
 	"github.com/redis/go-redis/v9"
 	"log"
 	"project0/internal/web"
 	"project0/internal/web/ijwt"
 	"project0/internal/web/middlewares"
+	"project0/pkg/ginx"
 	"project0/pkg/ginx/middleware/prometheus"
 	"project0/pkg/loggerDefine"
+	otelgin "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"strings"
 	"time"
 )
@@ -32,6 +35,12 @@ func InitGinMiddlewares(redisClient redis.Cmdable,Hdl ijwt.Handler,l loggerDefin
 		  Name:      "gin_http",
 		  Help:      "统计 GIN 的HTTP接口数据",
 	  }
+	  ginx.InitCounter(prometheus2.CounterOpts{
+		  Namespace: "society_pay",
+		  Subsystem: "webook",
+		  Name:      "biz_code",
+		  Help:      "统计业务错误码	",
+	  })
 	return []gin.HandlerFunc{
 		cors.New(cors.Config{
 			AllowCredentials: true, // 允许携带cookie
@@ -57,6 +66,7 @@ func InitGinMiddlewares(redisClient redis.Cmdable,Hdl ijwt.Handler,l loggerDefin
 		}), func(context *gin.Context) {
 			//log.Println("跨域通过middleware")
 		},
+		otelgin.Middleware("webook"),
 		pb.BuildResponseTime(),
 		pb.BuildActiveRequest(),
 		//ratelimit.NewBuilder(limiter.NewRedisSlideWindowLimiter(redisClient, time.Second, 1000)).Build(),

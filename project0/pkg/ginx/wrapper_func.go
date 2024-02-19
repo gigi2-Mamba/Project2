@@ -3,9 +3,11 @@ package ginx
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	"net/http"
 	"project0/pkg/loggerDefine"
+	"strconv"
 )
 
 func NewLogger() *zap.Logger {
@@ -18,6 +20,14 @@ func NewLogger() *zap.Logger {
 var logger = NewLogger()
 var L loggerDefine.LoggerV1 = loggerDefine.NewZapLogger(logger)
 
+//受制于泛型，只能用包变量
+var vector *prometheus.CounterVec
+
+func InitCounter(opt prometheus.CounterOpts)  {
+	vector = prometheus.NewCounterVec(opt,[]string{"code"})
+	prometheus.MustRegister(vector)
+}
+
 func WrapBody[Req any](bizFn func(ctx *gin.Context,req Req) (Result,error)) gin.HandlerFunc  {
 
 	return func(ctx *gin.Context) {
@@ -28,6 +38,7 @@ func WrapBody[Req any](bizFn func(ctx *gin.Context,req Req) (Result,error)) gin.
 		//L.Debug("输入参数",loggerDefine.Field{Key: "req",Val: req})
 
 		res,err := bizFn(ctx,req)
+		vector.WithLabelValues(strconv.Itoa(res.Code)).Inc()
 		if err != nil {
 			L.Error("执行业务逻辑失败",loggerDefine.Error(err))
 		}
@@ -55,6 +66,7 @@ func WrapBodyAndClaims[Req any,Claims jwt.Claims](
 			 return
 		 }
 		 res ,err := bizFn(ctx,req,uc)
+		vector.WithLabelValues(strconv.Itoa(res.Code)).Inc()
 		if err != nil {
 			L.Error("业务逻辑执行失败",loggerDefine.Error(err))
 		}

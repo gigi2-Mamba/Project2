@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/plugin/opentelemetry/tracing"
 	"gorm.io/plugin/prometheus"
 	"project0/pkg/gormx"
 	"project0/pkg/loggerDefine"
@@ -75,6 +76,11 @@ func InitDB(l loggerDefine.LoggerV1) *gorm.DB {
 	})
 
 	err = Db.Use(cb)
+	if err != nil {
+		panic(err)
+	}
+
+	err = Db.Use(tracing.NewPlugin(tracing.WithoutMetrics(), tracing.WithDBName("webook")))
 	if err != nil {
 		panic(err)
 	}

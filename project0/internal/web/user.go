@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"project0/internal/domain"
+	"project0/internal/errs"
 	"project0/internal/service"
 	"project0/internal/web/ijwt"
 	"project0/pkg/ginx"
@@ -69,19 +70,19 @@ func (u *UserHandler) Signup(ctx *gin.Context, req SignUpReq) (ginx.Result, erro
 	if err != nil {
 		ctx.String(http.StatusOK, "系统错误")
 		return ginx.Result{
-			Code: 5,
+			Code: errs.UserInternalServerError,
 			Msg:  "系统错误",
 		}, err
 	}
 	if !isEmail {
 		return ginx.Result{
-			Code: 4,
+			Code: errs.UserInvalidInput,
 			Msg:  "非法邮箱格式",
 		}, nil
 	}
 	if req.Password != req.ConfirmPassword {
 		return ginx.Result{
-			Code: 4,
+			Code: errs.UserInvalidInput,
 			Msg:  "两次输入密码不一致",
 		}, nil
 	}
@@ -90,7 +91,7 @@ func (u *UserHandler) Signup(ctx *gin.Context, req SignUpReq) (ginx.Result, erro
 	//err = errors.New("create an error")
 	if err != nil {
 		return ginx.Result{
-			Code: 5,
+			Code: errs.UserInternalServerError,
 			Msg:  "系统错误",
 		}, err
 	}
@@ -98,12 +99,12 @@ func (u *UserHandler) Signup(ctx *gin.Context, req SignUpReq) (ginx.Result, erro
 	if !isPwd {
 		return ginx.Result{
 			// 那这里还status ok？
-			Code: 4,
+			Code: errs.UserInvalidInput,
 			Msg:  "请至少包含数字，特殊字符，字母，整体长度8到16",
 		}, nil
 	}
-
-	err = u.svc.Signup(ctx, domain.User{
+    // 保证万无一失，使用这个context
+	err = u.svc.Signup(ctx.Request.Context(), domain.User{
 		Email:    req.Email,
 		Password: req.Password,
 	})
@@ -119,7 +120,7 @@ func (u *UserHandler) Signup(ctx *gin.Context, req SignUpReq) (ginx.Result, erro
 	case service.ErrDuplicateEmail:
 		return ginx.Result{
 			//Code: errs.UserDuplicateEmail,
-			Code: 4,
+			Code: errs.UserDuplicateEmail,
 			Msg:  "邮箱冲突",
 		}, nil
 	default:
