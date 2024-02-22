@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/ecodeclub/ekit/queue"
 	"github.com/ecodeclub/ekit/slice"
+	"log"
 	"math"
 	"project0/internal/repository"
 
@@ -30,7 +31,6 @@ type BatchRankingService struct {
 	batchSize int   // 批次大小，一批取多大也就是limit
 	scoreFunc func(likeCnt int64,utime time.Time) float64
 	n int   //热榜，前n个，控制传多少个
-
 	// 加入缓存
 	repo   repository.RankingRepository
 }
@@ -91,6 +91,7 @@ func (b *BatchRankingService) topN(ctx context.Context) ([]domain.Article, error
 		//取数据，取批量的article
 		arts ,err := b.artSvc.ListPub(ctx,start,offset,b.batchSize)
 		if err != nil {
+			log.Println("error is cron : top n: ",err)
 			return nil, err
 		}
 		//if len(arts) == 0 {

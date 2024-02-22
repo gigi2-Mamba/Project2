@@ -23,8 +23,6 @@ func NewRankingJob(svc service.RankingService, timeout time.Duration) *RankingJo
 	return &RankingJob{svc: svc, timeout: timeout}
 }
 
-
-
 func (r *RankingJob) Name() string {
 
 	return "ranking"
@@ -34,8 +32,7 @@ func (r *RankingJob) Run() error {
 	//想想要run这个job 要搞些什么？   启动要控制时间
 	ctx,cancel := context.WithTimeout(context.Background(),r.timeout)
 	defer cancel()
-
-	return r.svc.TopN(ctx)
+	return r.svc.gTopN(ctx)
 }
 
 

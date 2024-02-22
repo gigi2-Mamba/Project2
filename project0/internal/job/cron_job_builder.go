@@ -28,8 +28,9 @@ type CronJobBuilder struct {
 
 func NewCronJobBuilder(l loggerDefine.LoggerV1,opt prometheus.SummaryOpts) *CronJobBuilder {
 	//准备return需要的字段,这些标签名是对应到哪里的。 这可难搞啊
-	prometheus.NewSummaryVec(opt,[]string{"job","success"})
+	vec := prometheus.NewSummaryVec(opt, []string{"job", "success"})
 	return &CronJobBuilder{l: l,
+		vector: vec,
 		}
 }
 
