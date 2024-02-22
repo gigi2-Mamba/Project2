@@ -40,6 +40,7 @@ func (b *Builder) BuildResponseTime() gin.HandlerFunc  {
 		},
 	}, labels)
     prometheus.MustRegister(vector)
+	//有空要深究一下ctx.Next()  现在留下一个小疑问，什么情况下自己写的gin.context需要调用ctx.Next() TBC 2/21 21:52
 	return func(ctx *gin.Context) {
         start := time.Now()
 
@@ -47,7 +48,7 @@ func (b *Builder) BuildResponseTime() gin.HandlerFunc  {
 			duration := time.Since(start).Milliseconds()
 			method := ctx.Request.Method
 			//fullpath 是路由full path 不是整个url
-			pattern := ctx.FullPath()
+			pattern := ctx.FullPath() // 可以通过上下文获取请求路径
 			status := ctx.Writer.Status()
 			vector.WithLabelValues(method,pattern,strconv.Itoa(status)).Observe(float64(duration))
 		}()

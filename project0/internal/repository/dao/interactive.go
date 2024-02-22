@@ -53,12 +53,24 @@ type InteractiveDAO interface {
 	GetLikeInfo(ctx context.Context, biz string, id int64, uid int64) (UserLikeBiz,error)
 	GetCollectInfo(ctx context.Context, biz string, id int64, uid int64) (UserCollectBiz,error)
 	BatchIncrReadCnt(ctx context.Context, bizs []string, ids []int64) error
+	GetByIds(ctx context.Context, biz string, ids []int64) ([]Interactive,error)
 }
 
 type InteractiveGORMDAO struct {
      db *gorm.DB
 }
 
+func (i *InteractiveGORMDAO) GetByIds(ctx context.Context, biz string, ids []int64) ([]Interactive, error) {
+	var res []Interactive
+
+	err := i.db.WithContext(ctx).Where("biz = ? AND biz_id IN ?",biz,ids).First(&res).Error
+
+	return res,err
+}
+
+func NewInteractiveGORMDAO(db *gorm.DB) InteractiveDAO{
+	return &InteractiveGORMDAO{db: db}
+}
 // 就是查找收藏记录，根据error给上层liked处理
 func (i *InteractiveGORMDAO) GetLikeInfo(ctx context.Context, biz string, id int64, uid int64) (UserLikeBiz, error) {
 	// gorm的查找基本都是定义载体
@@ -81,9 +93,7 @@ func (i *InteractiveGORMDAO) Get(ctx context.Context, biz string, id int64) (Int
 	return res,err
 }
 
-func NewInteractiveGORMDAO(db *gorm.DB) InteractiveDAO{
-	return &InteractiveGORMDAO{db: db}
-}
+
 
 func (i *InteractiveGORMDAO) InsertCollectInfo(ctx context.Context, collect UserCollectBiz) error {
 	now := time.Now().UnixMilli()

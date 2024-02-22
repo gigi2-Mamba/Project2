@@ -8,8 +8,10 @@ import (
 	"project0/internal/events/article"
 	"project0/internal/repository"
 	"project0/pkg/loggerDefine"
+	"time"
 )
 
+//go:generate mockgen -source=./article.go -package=svcmocks -destination=./mocks/article.mock.go ArticleService
 type ArticleService interface {
 	Save(ctx context.Context, article domain.Article) (int64, error)
 	Publish(ctx context.Context, art domain.Article) (int64, error)
@@ -17,6 +19,8 @@ type ArticleService interface {
 	GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]domain.Article,error)
 	GetById(ctx context.Context, id int64) (domain.Article,error)
 	GetPubById(ctx context.Context, id,uid int64) (domain.Article,error)
+	// 热榜列表,统计某个时间之前的数据的前n条热榜数据
+	ListPub(ctx context.Context,start time.Time,offset,limit int ) ([]domain.Article,error)
 
 }
 
@@ -27,6 +31,10 @@ type articleService struct {
 	readerRepo repository.ArticleReaderRepository
 	authorRepo repository.ArticleAuthorRepository
 	l          loggerDefine.LoggerV1
+}
+
+func (a *articleService) ListPub(ctx context.Context, start time.Time, offset, limit int) ([]domain.Article, error) {
+	return a.repo.ListPub(ctx,start,offset,limit)
 }
 
 func NewArticleService(repo repository.ArticleRepository,producer article.Producer) ArticleService {

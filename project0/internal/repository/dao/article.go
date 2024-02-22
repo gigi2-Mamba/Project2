@@ -28,6 +28,7 @@ type ArticleDao interface {
 	GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]Article,error)
 	GetById(ctx context.Context, id int64) (Article, error)
 	GetPubById(ctx context.Context, id int64) (PublishedArticle,error)
+	ListPub(ctx context.Context, start time.Time, offset int, limit int) ([]PublishedArticle,error)
 }
 //同库不同表,高度相似可以做类型延伸
 type PublishedArticle Article
@@ -37,6 +38,19 @@ type PublishArticleV1 struct {
 }
 type ArticleGROMDAO struct {
 	db *gorm.DB
+}
+
+func (a *ArticleGROMDAO) ListPub(ctx context.Context, start time.Time, offset int, limit int) ([]PublishedArticle,error) {
+	// 小微书第一次批量查询？
+	//dao层不直接引用domain的方法
+	const ArticlePublishStatus = 2
+	var  res  []PublishedArticle
+	err := a.db.WithContext(ctx).Where("utime < ? and status = ?",start.UnixMilli(),ArticlePublishStatus).
+		Offset(offset).Limit(limit).First(&res).Error
+	//if err != nil {
+	//	return nil, err
+	//}   要返回的err已经是最后一个且是返回值。直接return作为方法最后一行.有其他参数的话就构造err但是不需要对if err !=nil 做处理
+	return  res,err
 }
 
 func NewArticleGROMDAO(db *gorm.DB) ArticleDao{

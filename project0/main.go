@@ -158,6 +158,11 @@ func main() {
 			panic(err)
 		}
 	}
+	app.cron.Start()
+	defer func() {
+		<- app.cron.Stop().Done()
+	}()
+
 	server := app.server
 	//server := wire.InitWebServerJ()
 	//server.GET("/hello", func(context *gin.Context) {

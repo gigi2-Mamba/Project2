@@ -19,6 +19,10 @@ import (
 var interactiveSvcSet	= wire.NewSet(
 	service.NewInteractiveService,repository.NewCacheInteractiveRepository,
 	cache.NewInteractiveCache,dao.NewInteractiveGORMDAO,)
+
+var  rankSvcSet = wire.NewSet(
+	cache.NewRankingRedisCache,repository.NewCacheRankingRepository,
+	service.NewBatchRankingService,)
 // 首要的main先初始化webServer
 func InitWebServerJ() *App {
 	wire.Build(
@@ -27,9 +31,9 @@ func InitWebServerJ() *App {
 		//Response time trigger limiter    & 增加冗余
 		ioc.InitRedisLimiter,ioc.NewSMSS,
 		ioc.InitSaramaClient,ioc.InitSyncProducer,
-		ioc.InitConsumers,
+		ioc.InitConsumers,ioc.InitRankingJob,ioc.InitJobs,
 		// DAO
-		interactiveSvcSet,
+		interactiveSvcSet,rankSvcSet,
 		article.NewSaramaSyncProducer,article.NewInteractiveReadEventConsumer,article.NewReadHistoryConsumer,
 		dao.NewUserDAO,dao.NewArticleGROMDAO,dao.NewHistoryGORMDAO,
 		// cache
@@ -54,7 +58,7 @@ func InitWebServerJ() *App {
 
 		ioc.InitGinMiddlewares,
 		ioc.InitWebServer,
-		// wire大结局，一个app代表整个应用
+		// wire大结局，一个app代表整个应用,这个也值得回头一看
 		wire.Struct(new(App),"*"),
 	)
 	return new(App)

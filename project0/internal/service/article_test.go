@@ -13,6 +13,7 @@ import (
 )
 
 func Test_articleService_Publish(t *testing.T) {
+	const batchSize= 2
      // 做service层的测试就要注入下一层，repository层。 mock repository
 	testCases := []struct{
 		name string

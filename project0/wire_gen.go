@@ -63,9 +63,13 @@ func InitWebServerJ() *App {
 	readHistoryRepository := repository.NewCacheArticleHistoryRepository(historyDAO, interactiveCache)
 	readHistoryConsumer := article.NewReadHistoryConsumer(readHistoryRepository, client, loggerV1)
 	v3 := ioc.InitConsumers(interactiveReadEventConsumer, readHistoryConsumer)
+	rankingService := service.NewBatchRankingService(interactiveService, articleService)
+	rankingJob := ioc.InitRankingJob(rankingService)
+	cron := ioc.InitJobs(loggerV1, rankingJob)
 	app := &App{
 		server:    engine,
 		consumers: v3,
+		cron:      cron,
 	}
 	return app
 }
@@ -81,3 +85,5 @@ func InitResponseTimeFailover() *failover.ResponseTimeFailover {
 // wire.go:
 
 var interactiveSvcSet = wire.NewSet(service.NewInteractiveService, repository.NewCacheInteractiveRepository, cache.NewInteractiveCache, dao.NewInteractiveGORMDAO)
+
+var rankSvcSet = wire.NewSet(cache.NewRankingRedisCache, repository.NewCacheRankingRepository, service.NewBatchRankingService)

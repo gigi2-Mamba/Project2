@@ -10,16 +10,33 @@ import (
 // Created by Changer on 2024/2/9.
 // Copyright 2024 programmer.
 
+//go:generate mockgen -source=./interactive.go -package=svcmocks -destination=./mocks/interactive.go Interactive
 type InteractiveService interface {
 	IncrReadCnt(ctx context.Context, biz string, bizId int64) error
 	Like(ctx context.Context, biz string,id int64, uid int64) error
 	CancelLike(ctx context.Context, biz string,id int64, uid int64) error
 	Collect(ctx context.Context, biz string,id int64, cid int64, uid int64) error
 	Get(ctx context.Context, biz string, id int64, uid int64) (domain.Interactive, error)
+	// 找出热榜列表的互动数据
+	GetByIds(ctx context.Context,biz string,ids []int64) (map[int64]domain.Interactive,error)
 }
 
 type interactiveService struct {
 	repo repository.InteractiveRepository
+}
+
+func (i *interactiveService) GetByIds(ctx context.Context, biz string, ids []int64) (map[int64]domain.Interactive, error) {
+	inters ,err:=i.repo.GetByIds(ctx,biz,ids)
+	if err != nil {
+		return nil, err
+	}
+	res := make(map[int64]domain.Interactive,len(inters))
+
+	for _,inter := range inters {
+		res[inter.BizId] = inter
+	}
+
+	return res,nil
 }
 
 func NewInteractiveService(repo repository.InteractiveRepository) InteractiveService {

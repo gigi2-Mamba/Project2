@@ -20,6 +20,7 @@ type ArticleRepository interface {
 	GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]domain.Article, error)
 	GetById(ctx context.Context, id int64) (domain.Article, error)
 	GetPubById(ctx context.Context, id int64) (domain.Article, error)
+	ListPub(ctx context.Context, start time.Time,offset, limit int) ([]domain.Article, error)
 }
 
 type CacheArticleRepository struct {
@@ -32,6 +33,25 @@ type CacheArticleRepository struct {
 	authorDAO dao.ArticleAuthorDAO
 	// 强耦合，没法摆脱依赖。 严格来说repository抽象存储层不用考虑具体的db实现
 	db *gorm.DB
+}
+//在repository避免不了的entity 转domain
+func (c *CacheArticleRepository) ListPub(ctx context.Context,start time.Time, offset, limit int) ([]domain.Article, error) {
+	pubArts,err :=c.dao.ListPub(ctx,start,offset,limit)
+	if err != nil {
+		return []domain.Article{},err
+	}
+	return slice.Map(pubArts, func(idx int, src dao.PublishedArticle) domain.Article {
+		   return c.toDomain(dao.Article(src))
+	}),nil
+
+}
+
+func NewCacheArticleRepository(dao dao.ArticleDao, cache cache.ArticleCache,user dao.UserDao) ArticleRepository {
+	return &CacheArticleRepository{
+		dao:   dao,
+		cache: cache,
+		userDao: user,
+	}
 }
 
 func (c *CacheArticleRepository) GetPubById(ctx context.Context, id int64) (domain.Article, error) {
@@ -128,14 +148,6 @@ func (c *CacheArticleRepository) GetByAuthor(ctx context.Context, uid int64, off
 	}()
 
 	return res, nil
-}
-
-func NewCacheArticleRepository(dao dao.ArticleDao, cache cache.ArticleCache,user dao.UserDao) ArticleRepository {
-	return &CacheArticleRepository{
-		dao:   dao,
-		cache: cache,
-		userDao: user,
-	}
 }
 
 // 同步status不要搞缓存吗
@@ -255,6 +267,7 @@ func (c *CacheArticleRepository) Save(ctx context.Context, art domain.Article) (
 	}
 	return id, err
 }
+
 func (c *CacheArticleRepository) Update(ctx context.Context, art domain.Article) error {
 	err := c.dao.UpdateById(ctx, c.toEntity(art))
 	if err == nil {
@@ -302,5 +315,4 @@ func (c *CacheArticleRepository) preCache(ctx context.Context, arts []domain.Art
 			log.Println("相关业务缓存预设置失败: ", err)
 		}
 	}
-
 }

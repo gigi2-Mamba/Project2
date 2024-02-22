@@ -8,7 +8,8 @@ require (
 	github.com/aws/aws-sdk-go v1.50.11
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/dlclark/regexp2 v1.10.0
-	github.com/ecodeclub/ekit v0.0.8
+	//github.com/ecodeclub/ekit v0.0.8
+	github.com/ecodeclub/ekit v0.0.0-20240211145635-ea42c17ffeb0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gin-contrib/cors v1.5.0
 	github.com/gin-contrib/sessions v0.0.5
@@ -39,6 +40,11 @@ require (
 	gorm.io/gorm v1.25.5
 	gorm.io/plugin/opentelemetry v0.1.4
 	gorm.io/plugin/prometheus v0.1.0
+)
+
+require (
+	github.com/robfig/cron/v3 v3.0.1
+	go.opentelemetry.io/otel/trace v1.23.1
 )
 
 require (
@@ -142,10 +148,9 @@ require (
 	go.etcd.io/etcd/client/v3 v3.5.10 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/otel/metric v1.23.1 // indirect
-	go.opentelemetry.io/otel/trace v1.23.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.5.0 // indirect
-	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
+	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
 	golang.org/x/net v0.21.0 // indirect
 	golang.org/x/oauth2 v0.15.0 // indirect
 	golang.org/x/sys v0.17.0 // indirect

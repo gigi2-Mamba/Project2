@@ -24,7 +24,7 @@ func InitDB(l loggerDefine.LoggerV1) *gorm.DB {
 	var d dcfg
 	viper.UnmarshalKey("db",&d,)
 	//log.Println(" can out put db ",d.Dsn)
-	// Option... 结构， 无限填充
+	// Option... 结构， 无限填充,这个logger有问题。下次要注释，就先手动注释import,不然以后不好找
 	Db, err := gorm.Open(mysql.Open(d.Dsn), &gorm.Config{
 		//Logger: glogger.New(gormLoggerFunc(l.Debug),glogger.Config{
 		//	// 慢查询
