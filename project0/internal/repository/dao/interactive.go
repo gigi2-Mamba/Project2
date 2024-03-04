@@ -2,8 +2,11 @@ package dao
 
 import (
 	"context"
+	"errors"
+	"github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"log"
 	"time"
 )
 
@@ -122,38 +125,103 @@ func (i *InteractiveGORMDAO) InsertCollectInfo(ctx context.Context, collect User
 func (i *InteractiveGORMDAO) IncrLikeInfo(ctx context.Context, biz string, id int64, uid int64) error {
 	// 怎么还要事务处理？  点赞是一个并发的行为，如何并发修改数据库字段呢？
 	// 这里更新两个库所以要事务处理。
+
+	log.Println("id: ",id)
+	log.Println("uid : ",uid)
 	now := time.Now().UnixMilli()
-	return  i.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		err := tx.Clauses(clause.OnConflict{
-			DoUpdates: clause.Assignments(map[string]interface{}{
-				"utime":  now,
-				"status": 1,
-			}),
-		}).Create(&UserLikeBiz{
-			Biz:   biz,
-			Uid:   uid,
-			Status: 1,
-			BizId: id,
-			Ctime: now,
-			Utime: now,
-		}).Error
-		if err != nil {
-			return err
-		}
-		// 更新阅读数量不应该会出现并发问题吗
-		return tx.Clauses(clause.OnConflict{
-			DoUpdates: clause.Assignments(map[string]interface{}{
-				"utime":now,
-				"like_cnt": gorm.Expr("like_cnt+1"),
-			}),
-		}).Create(&Interactive{
+
+	//return  i.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	//	err := tx.Clauses(clause.OnConflict{
+	//		DoUpdates: clause.Assignments(map[string]interface{}{
+	//			"utime":  now,
+	//			"status": 1,
+	//		}),
+	//	}).Create(&UserLikeBiz{
+	//		Biz:   biz,
+	//		Uid:   uid,
+	//		Status: 1,
+	//		BizId: id,
+	//		Ctime: now,
+	//		Utime: now,
+	//	}).Error
+	//	if err != nil {
+	//		return err
+	//	}
+	//	// 更新阅读数量不应该会出现并发问题吗
+	//	return tx.Clauses(clause.OnConflict{
+	//		DoUpdates: clause.Assignments(map[string]interface{}{
+	//			"utime":now,
+	//			"like_cnt": gorm.Expr("like_cnt+1"),
+	//		}),
+	//	}).Create(&Interactive{
+	//		Biz:     biz,
+	//		BizId:   id,
+	//		LikeCnt: 1,
+	//		Ctime:   now,
+	//		Utime:   now,
+	//	}).Error
+	//})
+	db := i.db.WithContext(ctx)
+	err := db.Create(&UserLikeBiz{
+		Biz:    biz,
+		Uid:    uid,
+		Status: 1,
+		BizId:  id,
+		Ctime:  now,
+		Utime:  now,
+	}).Error
+
+	if err == nil {
+		return db.Create(&Interactive{
 			Biz:     biz,
 			BizId:   id,
 			LikeCnt: 1,
 			Ctime:   now,
 			Utime:   now,
 		}).Error
-	})
+	}
+	//走到这里，正常是有人取消点赞，再次点赞
+	if me, ok := err.(*mysql.MySQLError); ok {
+		const duplicateErr uint16 = 1062
+		if me.Number == duplicateErr {
+			return db.Transaction(func(tx *gorm.DB) error {
+				err2 := tx.Model(&UserLikeBiz{}).
+					Where(" uid = ? and biz = ? and biz_id = ? and status = ? ", uid, biz, id, 0).
+					Updates(map[string]any{
+						"utime":  now,
+						"status": 0,
+					}).Error
+				log.Println("err2: ",err2)
+				if err2 != nil {
+					return err2
+				}
+				log.Println("err2 return 这里不会输出")
+				err2 = tx.Clauses(clause.OnConflict{
+					DoUpdates: clause.Assignments(map[string]interface{}{
+						"utime":    now,
+						"like_cnt": gorm.Expr("like_cnt+1"),
+					}),
+				}).Create(&Interactive{
+					Biz:     biz,
+					BizId:   id,
+					LikeCnt: 1,
+					Ctime:   now,
+					Utime:   now,
+				}).Error
+				if err2 != nil {
+					return err
+				}
+				log.Println("tx.RowsAffected ",tx.RowsAffected)
+				if tx.RowsAffected > 1 {
+					return nil
+				}
+				return errors.New("*******")
+			})
+		}
+	} else {
+		return err
+	}
+	return nil
 }
 
 func (i *InteractiveGORMDAO) DecrLikeInfo(ctx context.Context, biz string, id int64, uid int64) error {

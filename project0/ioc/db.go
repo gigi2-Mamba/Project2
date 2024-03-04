@@ -25,6 +25,8 @@ func InitDB(l loggerDefine.LoggerV1) *gorm.DB {
 	viper.UnmarshalKey("db",&d,)
 	//log.Println(" can out put db ",d.Dsn)
 	// Option... 结构， 无限填充,这个logger有问题。下次要注释，就先手动注释import,不然以后不好找
+	//       glogger "gorm.io/gorm/logger"
+	// 当时开启这个日志主要是aop
 	Db, err := gorm.Open(mysql.Open(d.Dsn), &gorm.Config{
 		//Logger: glogger.New(gormLoggerFunc(l.Debug),glogger.Config{
 		//	// 慢查询
@@ -79,7 +81,7 @@ func InitDB(l loggerDefine.LoggerV1) *gorm.DB {
 	if err != nil {
 		panic(err)
 	}
-
+    // gorm支持otel
 	err = Db.Use(tracing.NewPlugin(tracing.WithoutMetrics(), tracing.WithDBName("webook")))
 	if err != nil {
 		panic(err)

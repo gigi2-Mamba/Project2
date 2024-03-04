@@ -61,6 +61,7 @@ services:
 
   grafana:
     image: grafana/grafana-enterprise:10.2.0
+#    restart: on-failure
     ports:
       - 3000:3000
   mongo:

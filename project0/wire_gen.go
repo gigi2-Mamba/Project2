@@ -63,8 +63,11 @@ func InitWebServerJ() *App {
 	readHistoryRepository := repository.NewCacheArticleHistoryRepository(historyDAO, interactiveCache)
 	readHistoryConsumer := article.NewReadHistoryConsumer(readHistoryRepository, client, loggerV1)
 	v3 := ioc.InitConsumers(interactiveReadEventConsumer, readHistoryConsumer)
-	rankingService := service.NewBatchRankingService(interactiveService, articleService)
-	rankingJob := ioc.InitRankingJob(rankingService)
+	rankingCache := cache.NewRankingRedisCache(cmdable)
+	rankingRepository := repository.NewCacheRankingRepository(rankingCache)
+	rankingService := service.NewBatchRankingService(interactiveService, articleService, rankingRepository)
+	rlockClient := ioc.InitRlockClient(cmdable)
+	rankingJob := ioc.InitRankingJob(rankingService, loggerV1, rlockClient)
 	cron := ioc.InitJobs(loggerV1, rankingJob)
 	app := &App{
 		server:    engine,

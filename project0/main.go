@@ -158,10 +158,11 @@ func main() {
 			panic(err)
 		}
 	}
-	app.cron.Start()
-	defer func() {
-		<- app.cron.Stop().Done()
-	}()
+	//先停job
+	//app.cron.Start()
+	//defer func() {
+	//	<- app.cron.Stop().Done()
+	//}()
 
 	server := app.server
 	//server := wire.InitWebServerJ()
@@ -175,7 +176,7 @@ func main() {
 	//})
 	//initUserHdl(mysqlInit.Db, server)
 	go failover.AsyncSendCode(InitResponseTimeFailover())
-	server.Run(":8083")
+	server.Run(":9083")
 }
 
 // session 和 jwt可以交替使用

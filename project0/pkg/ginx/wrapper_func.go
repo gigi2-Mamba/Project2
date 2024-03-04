@@ -66,6 +66,7 @@ func WrapBodyAndClaims[Req any,Claims jwt.Claims](
 			 return
 		 }
 		 res ,err := bizFn(ctx,req,uc)
+		 //简单的计数是什么情况
 		vector.WithLabelValues(strconv.Itoa(res.Code)).Inc()
 		if err != nil {
 			L.Error("业务逻辑执行失败",loggerDefine.Error(err))

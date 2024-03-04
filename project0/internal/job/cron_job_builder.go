@@ -33,8 +33,6 @@ func NewCronJobBuilder(l loggerDefine.LoggerV1,opt prometheus.SummaryOpts) *Cron
 		vector: vec,
 		}
 }
-
-
 // 利用cron去调用自己的job  这就是cron的基本灵魂
 func (f *CronJobBuilder) Build(job Job) cron.Job {
      // cron原生的wrapper。 明说太死板. 在我看来是因为 原生的cron.FuncJob  只提供了一个方法。所以

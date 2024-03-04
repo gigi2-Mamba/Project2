@@ -79,7 +79,6 @@ func (a *ArticleGROMDAO) GetByAuthor(ctx context.Context, uid int64, offset int,
 }
 
 
-
 func (a *ArticleGROMDAO) SyncStatus(ctx context.Context, id int64, uid int64, status uint8) error {
 	// 同步状态需要同步时间
 	now := time.Now().UnixMilli()

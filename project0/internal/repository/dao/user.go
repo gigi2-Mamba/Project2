@@ -46,6 +46,7 @@ type UserDao interface {
 	FindByWechat(ctx context.Context, openId sql.NullString) (User, error)
 	CreateProfile(ctx context.Context, up UserProfile, id int64) error
 	Edit(ctx *gin.Context, profile domain.UserProfile) error
+	// get profile
 	Profile(ctx context.Context, id int64) (UserProfile, error)
 }
 type GORMUserDao struct {

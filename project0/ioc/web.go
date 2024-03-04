@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	prometheus2 "github.com/prometheus/client_golang/prometheus"
 	"github.com/redis/go-redis/v9"
+	otelgin "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"log"
 	"project0/internal/web"
 	"project0/internal/web/ijwt"
@@ -12,11 +13,11 @@ import (
 	"project0/pkg/ginx"
 	"project0/pkg/ginx/middleware/prometheus"
 	"project0/pkg/loggerDefine"
-	otelgin "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"strings"
 	"time"
 )
 
+//先注册中间件
 func InitWebServer(mdls []gin.HandlerFunc, userHdl *web.UserHandler, wechatHdl *web.OAuth2Handler,articleHdl *web.ArticleHandler) *gin.Engine {
 	server := gin.Default()
 	server.Use(mdls...)

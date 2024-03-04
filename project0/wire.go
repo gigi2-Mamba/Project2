@@ -22,7 +22,7 @@ var interactiveSvcSet	= wire.NewSet(
 
 var  rankSvcSet = wire.NewSet(
 	cache.NewRankingRedisCache,repository.NewCacheRankingRepository,
-	service.NewBatchRankingService,)
+	service.NewBatchRankingService)
 // 首要的main先初始化webServer
 func InitWebServerJ() *App {
 	wire.Build(
@@ -32,6 +32,7 @@ func InitWebServerJ() *App {
 		ioc.InitRedisLimiter,ioc.NewSMSS,
 		ioc.InitSaramaClient,ioc.InitSyncProducer,
 		ioc.InitConsumers,ioc.InitRankingJob,ioc.InitJobs,
+		ioc.InitRlockClient,
 		// DAO
 		interactiveSvcSet,rankSvcSet,
 		article.NewSaramaSyncProducer,article.NewInteractiveReadEventConsumer,article.NewReadHistoryConsumer,

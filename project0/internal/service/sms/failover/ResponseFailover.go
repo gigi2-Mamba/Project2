@@ -11,7 +11,8 @@ import (
 )
 
 /*
-本次超时机制超过限定的响应时间或者这次响应时间达上次的2.5倍
+判断服务不可用
+本次超时机制超过限定的响应时间或者这次响应时间到达上次的2.5倍
 */
 type ResponseTimeFailover struct {
 	smss      []sms.Service
@@ -55,6 +56,7 @@ func (r *ResponseTimeFailover) Send(ctx context.Context, tplId string, args []st
 		return nil
 
 	}
+
 
 	err = r.smss[idx].Send(ctx, tplId, args, numbers...)
 

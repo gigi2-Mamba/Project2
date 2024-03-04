@@ -4,6 +4,7 @@ import (
 	"context"
 	"project0/internal/domain"
 	"project0/internal/repository/cache"
+
 )
 
 
@@ -26,7 +27,7 @@ func NewCacheRankingRepositoryV1(redisCache cache.RankingRedisCache, localCache 
 	return &CacheRankingRepository{redisCache: redisCache, localCache: localCache}
 }
 
-func NewCacheRankingRepository(cache cache.RankingCache) *CacheRankingRepository {
+func NewCacheRankingRepository(cache cache.RankingCache) RankingRepository {
 	return &CacheRankingRepository{cache: cache}
 }
 

@@ -277,7 +277,6 @@ func (c *CacheArticleRepository) Update(ctx context.Context, art domain.Article)
 		}
 	}
 	return err
-
 }
 
 func (c *CacheArticleRepository) toEntity(art domain.Article) dao.Article {

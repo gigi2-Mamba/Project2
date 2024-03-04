@@ -9,7 +9,7 @@ require (
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/dlclark/regexp2 v1.10.0
 	//github.com/ecodeclub/ekit v0.0.8
-	github.com/ecodeclub/ekit v0.0.0-20240211145635-ea42c17ffeb0
+	github.com/ecodeclub/ekit v0.0.9-0.20240211145635-ea42c17ffeb0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gin-contrib/cors v1.5.0
 	github.com/gin-contrib/sessions v0.0.5
@@ -43,6 +43,7 @@ require (
 )
 
 require (
+	github.com/gotomicro/redis-lock v0.0.3
 	github.com/robfig/cron/v3 v3.0.1
 	go.opentelemetry.io/otel/trace v1.23.1
 )
