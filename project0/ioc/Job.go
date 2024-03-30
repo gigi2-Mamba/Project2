@@ -22,20 +22,20 @@ func InitRlockClient(client redis.Cmdable) *rlock.Client {
 	return rlock.NewClient(client)
 }
 
-func InitRankingJob(svc service.RankingService,l loggerDefine.LoggerV1,client *rlock.Client) *job.RankingJob{
-	timeout :=  time.Minute * 4
-	return job.NewRankingJob(svc,timeout,l,client)
+func InitRankingJob(svc service.RankingService, l loggerDefine.LoggerV1, client *rlock.Client) *job.RankingJob {
+	timeout := time.Minute * 4
+	return job.NewRankingJob(svc, timeout, l, client)
 }
 
-//现在就一个job所以 使用InitJobs,多个jobq其实也不存在多个job
+// 现在就一个job所以 使用InitJobs,多个jobq其实也不存在多个job
 // 提供cron实例
-func InitJobs(l loggerDefine.LoggerV1,rjob *job.RankingJob) *cron.Cron {
+func InitJobs(l loggerDefine.LoggerV1, rjob *job.RankingJob) *cron.Cron {
 	//
-	builder := job.NewCronJobBuilder(l,prometheus.SummaryOpts{
+	builder := job.NewCronJobBuilder(l, prometheus.SummaryOpts{
 		Namespace: "society_pay",
 		Subsystem: "webook",
-		Name: "cron_job",
-		Help: "定时任务执行",
+		Name:      "cron_job",
+		Help:      "定时任务执行",
 		Objectives: map[float64]float64{
 			0.5:   0.01,
 			0.75:  0.01,
@@ -47,9 +47,9 @@ func InitJobs(l loggerDefine.LoggerV1,rjob *job.RankingJob) *cron.Cron {
 
 	expr := cron.New(cron.WithSeconds())
 
-	_,err := expr.AddJob("@every 30s",builder.Build(rjob))
+	_, err := expr.AddJob("@every 30s", builder.Build(rjob))
 	if err != nil {
-		log.Println("panic err here: ",err)
+		log.Println("panic err here: ", err)
 		panic(err)
 	}
 	return expr

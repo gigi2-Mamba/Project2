@@ -22,12 +22,12 @@ func (c *Callbacks) Name() string {
 
 func (c *Callbacks) Initialize(db *gorm.DB) error {
 	err := db.Callback().Create().Before("*").
-		Register("prometheus_create_before",c.Before())
+		Register("prometheus_create_before", c.Before())
 	if err != nil {
 		return err
 	}
 	err = db.Callback().Create().After("*").
-		Register("prometheus_create_after",c.After("CREATE"))
+		Register("prometheus_create_after", c.After("CREATE"))
 	if err != nil {
 		return err
 	}
@@ -92,34 +92,33 @@ func (c *Callbacks) Initialize(db *gorm.DB) error {
 }
 
 func NewCallbacks(opt prometheus.SummaryOpts) *Callbacks {
-  vector := prometheus.NewSummaryVec(opt,[]string{"type","table"})
-  //重点，注册，注册
-  prometheus.MustRegister(vector)
+	vector := prometheus.NewSummaryVec(opt, []string{"type", "table"})
+	//重点，注册，注册
+	prometheus.MustRegister(vector)
 	return &Callbacks{
 		//想要知道的label
 		vector: vector,
 	}
 }
 
-func (c *Callbacks) After(typ string) func(db *gorm.DB)  {
+func (c *Callbacks) After(typ string) func(db *gorm.DB) {
 
 	return func(db *gorm.DB) {
 		//能省一点是一点，靠推断
-		val,_ := db.Get("start_time")
-        start,ok := val.(time.Time)
+		val, _ := db.Get("start_time")
+		start, ok := val.(time.Time)
 		if ok {
 			duration := time.Since(start).Milliseconds()
 
-			c.vector.WithLabelValues(typ,db.Statement.Table).Observe(float64(duration))
+			c.vector.WithLabelValues(typ, db.Statement.Table).Observe(float64(duration))
 		}
-
 
 	}
 
 }
-func (c *Callbacks) Before() func(db *gorm.DB)  {
-	 return func(db *gorm.DB) {
-		 start := time.Now()
-		 db.Set("start_time",start)
-	 }
+func (c *Callbacks) Before() func(db *gorm.DB) {
+	return func(db *gorm.DB) {
+		start := time.Now()
+		db.Set("start_time", start)
+	}
 }

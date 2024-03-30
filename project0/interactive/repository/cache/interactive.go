@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/redis/go-redis/v9"
 	"log"
-	"project0/internal/domain"
+	domain "project0/interactive/domain"
 	"strconv"
 	"time"
 )
@@ -17,6 +17,7 @@ import (
 var (
 	//go:embed lua/incr_cnt.lua
 	luaIncrCnt string
+    ErrKeyNotExist = redis.Nil
 )
 
 const (
@@ -32,27 +33,28 @@ type InteractiveCache interface {
 	IncrCollectCnt(ctx context.Context, biz string, id int64) error
 	Get(ctx context.Context, biz string, id int64) (domain.Interactive, error)
 	Set(ctx context.Context, biz string, id int64, res domain.Interactive) error
-	ReadArticleHistory(ctx context.Context, record domain.ReadHistoryRecord) error
+	//ReadArticleHistory(ctx context.Context, record domain.ReadHistoryRecord) error
 }
 
 type interactiveCache struct {
 	client redis.Cmdable
 }
+
 // 用户个人观看历史记录
-func (i *interactiveCache) ReadArticleHistory(ctx context.Context, record domain.ReadHistoryRecord) error {
-	return nil
-}
+//func (i *interactiveCache) ReadArticleHistory(ctx context.Context, record domain.ReadHistoryRecord) error {
+//	return nil
+//}
 
 func (i *interactiveCache) Set(ctx context.Context, biz string, id int64, res domain.Interactive) error {
-	key := i.Key(biz,id)
-	log.Println("set interactive cache key: ",key)
+	key := i.Key(biz, id)
+	log.Println("set interactive cache key: ", key)
 	err := i.client.HMSet(ctx, key, fieldReadCnt, res.ReadCnt, fieldLikeCnt,
 		res.LikeCnt, fieldCollectCnt, res.CollectCnt).Err()
 	if err != nil {
 		return err
 	}
 	//过期时间可以随便设置
-	return i.client.Expire(ctx,key,time.Minute * 10).Err()
+	return i.client.Expire(ctx, key, time.Minute*10).Err()
 }
 
 func NewInteractiveCache(client redis.Cmdable) InteractiveCache {
@@ -89,8 +91,6 @@ func (i *interactiveCache) DecrLikeCnt(ctx context.Context, biz string, id int64
 	key := i.Key(biz, id)
 	return i.client.Eval(ctx, luaIncrCnt, []string{key}, fieldLikeCnt, -1).Err()
 }
-
-
 
 func (i *interactiveCache) IncrReadCntIFPresent(ctx context.Context, biz string, id int64) error {
 	key := i.Key(biz, id)

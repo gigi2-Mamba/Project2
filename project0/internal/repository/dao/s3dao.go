@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 )
+
 type ArticleS3DAO struct {
 	ArticleGROMDAO
 	oss *s3.S3
@@ -20,13 +21,12 @@ func NewArticleS3DAO(db ArticleGROMDAO, oss *s3.S3) *ArticleS3DAO {
 	return &ArticleS3DAO{ArticleGROMDAO: db, oss: oss}
 }
 
-
 func (a *ArticleS3DAO) Sync(ctx context.Context, art Article) (int64, error) {
 	// 方法外定义更简洁？
 	id := art.Id
 	//log.Println("should 2 published : ",art.Status)
 	// 闭包处理事务
-	err :=a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	err := a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		//创造了本体，使用了事务实现
 		dao := NewArticleGROMDAO(tx)
 		//使用var 方便给if-else使用
@@ -40,7 +40,7 @@ func (a *ArticleS3DAO) Sync(ctx context.Context, art Article) (int64, error) {
 		}
 
 		if err != nil {
-			return  err
+			return err
 		}
 		now := time.Now().UnixMilli()
 		art.Id = id
@@ -61,8 +61,8 @@ func (a *ArticleS3DAO) Sync(ctx context.Context, art Article) (int64, error) {
 			DoUpdates: clause.Assignments(map[string]interface{}{
 				"title": publishArt.Title,
 
-				"utime": now,
-				"status":publishArt.Status,
+				"utime":  now,
+				"status": publishArt.Status,
 			}),
 		}).Create(&publishArt).Error
 		return err
@@ -80,7 +80,6 @@ func (a *ArticleS3DAO) Sync(ctx context.Context, art Article) (int64, error) {
 	return id, err
 }
 
-
 func (a *ArticleS3DAO) SyncStatus(ctx context.Context, uid int64, id int64, status uint8) error {
 	now := time.Now().UnixMilli()
 	err := a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -94,7 +93,7 @@ func (a *ArticleS3DAO) SyncStatus(ctx context.Context, uid int64, id int64, stat
 			return res.Error
 		}
 		if res.RowsAffected != 1 {
-			return  errors.New("ID 不对或者创作者不对")
+			return errors.New("ID 不对或者创作者不对")
 		}
 		return tx.Model(&PublishedArticleV2{}).
 			Where("id = ?", uid).
@@ -116,16 +115,15 @@ func (a *ArticleS3DAO) SyncStatus(ctx context.Context, uid int64, id int64, stat
 	return err
 }
 
-//  oss
+// oss
 type PublishedArticleV2 struct {
-	Id      int64  `gorm:"primaryKey,autoIncrement" bson:"id,omitempty"`
+	Id       int64 `gorm:"primaryKey,autoIncrement" bson:"id,omitempty"`
 	AuthorId int64 `gorm:"index" bson:"author_id,omitempty"`
 	Ctime    int64 `bson:"ctime,omitempty"`
 	//更新时间
-	Utime int64 `bson:"utime,omitempty"`
-	Status uint8 `bson:"status,omitempty"`
-	Title   string `gorm:"type=varchar(4096)" bson:"title,omitempty"`
+	Utime  int64  `bson:"utime,omitempty"`
+	Status uint8  `bson:"status,omitempty"`
+	Title  string `gorm:"type=varchar(4096)" bson:"title,omitempty"`
 	//Content string `gorm:"type=BLOB"`
-
 
 }

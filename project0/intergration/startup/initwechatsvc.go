@@ -7,6 +7,5 @@ import (
 
 func InitWechatService(l loggerDefine.LoggerV1) wechat.Service {
 
-	return wechat.NewService("appID", "appSecret",l)
+	return wechat.NewService("appID", "appSecret", l)
 }
-

@@ -15,6 +15,6 @@ func InitWechatService(l loggerDefine.LoggerV1) wechat.Service {
 	}
 
 	appSecret, ok := os.LookupEnv("WECHAT_APP_SECRET")
-	appSecret ="DFDFDF"
-	return wechat.NewService(appID, appSecret,l)
+	appSecret = "DFDFDF"
+	return wechat.NewService(appID, appSecret, l)
 }

@@ -14,12 +14,12 @@ Created by payden-programmer on 2024/2/14.
 // 为什么要写这个handler   这个handler是单消费版本
 type Handler[T any] struct {
 	// 这个方法是怎么想出来的，很自然而然需要消费者信息和事件
-	fn func(msg *sarama.ConsumerMessage,evt T) error
-	l loggerDefine.LoggerV1
+	fn func(msg *sarama.ConsumerMessage, evt T) error
+	l  loggerDefine.LoggerV1
 }
 
 // 泛型方法。 返回值是指定的T就可以
-func NewHandler[T any]( l loggerDefine.LoggerV1,fn func(msg *sarama.ConsumerMessage, evt T) error) *Handler[T] {
+func NewHandler[T any](l loggerDefine.LoggerV1, fn func(msg *sarama.ConsumerMessage, evt T) error) *Handler[T] {
 	return &Handler[T]{fn: fn, l: l}
 }
 
@@ -44,25 +44,25 @@ func (h *Handler[T]) ConsumeClaim(session sarama.ConsumerGroupSession, claim sar
 		err := json.Unmarshal(msg.Value, &t)
 		if err != nil {
 			h.l.Error("反序列化消息失败",
-				loggerDefine.String("topic",msg.Topic),
-				loggerDefine.Int32("partition",msg.Partition),
-				loggerDefine.Int64("offset",msg.Offset),
+				loggerDefine.String("topic", msg.Topic),
+				loggerDefine.Int32("partition", msg.Partition),
+				loggerDefine.Int64("offset", msg.Offset),
 				loggerDefine.Error(err))
 			return err
 
 		}
-		err = h.fn(msg,t)
+		err = h.fn(msg, t)
 		if err != nil {
-			h.l.Error("处理消息失败",
-				loggerDefine.String("topic",msg.Topic),
-				loggerDefine.Int32("partition",msg.Partition),
-				loggerDefine.Int64("offset",msg.Offset),
+			h.l.Error("单个处理消息异常失败",
+				loggerDefine.String("topic", msg.Topic),
+				loggerDefine.Int32("partition", msg.Partition),
+				loggerDefine.Int64("offset", msg.Offset),
 				loggerDefine.Error(err))
 			return err
 
 		}
-       // 标记消息被消费了 ，为什么一定要标记啊？
-		session.MarkMessage(msg,"处理阅读数")
+		// 标记消息被消费了 ，为什么一定要标记啊？
+		session.MarkMessage(msg, "处理阅读数")
 	}
 	return nil
 

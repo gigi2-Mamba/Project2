@@ -17,6 +17,7 @@ func NewLoginJWTMiddlewareBuilder(handler ijwt.Handler) *LoginJWTMiddlewareBuild
 		Handler: handler,
 	}
 }
+
 /// TBCMISS   miss   field inject
 
 func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
@@ -25,15 +26,15 @@ func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 		//log.Println(path, " --------------------")
 		// 对不需要登录校验的路由放行
 		if path == "/users/signup" ||
-			path =="/hello" ||
-			path =="/setcookie" ||
+			path == "/hello" ||
+			path == "/setcookie" ||
 			path == "/users/login" ||
 			path == "/users/login_sms/send/code0" ||
 			path == "/users/login_sms0" ||
 			path == "/oauth2/wechat/authurl" ||
 			path == "/oauth2/wechat/callback" ||
-			path== "/oauth2/wechat/setcookie" ||
-			path== "/oauth2/wechat/getcookie"{
+			path == "/oauth2/wechat/setcookie" ||
+			path == "/oauth2/wechat/getcookie" {
 			return
 		}
 		//tokenStr, ok := ctx.Get("Bearer")  //  这里的get是对ctx里维护信息传递的那个map string-string
@@ -57,12 +58,11 @@ func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 		}
 		// 为什么设置7天登录的token之后就不要UserAgent的校验了？
 		if uc.UserAgent != ctx.GetHeader("User-Agent") {
-
 			ctx.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 
-        // 在登录校验里加入了 自动刷新机制
+		// 在登录校验里加入了 自动刷新机制
 
 		//expireTime, _ := uc.GetExpirationTime()
 		//// 剩余时间小于50s
@@ -79,7 +79,7 @@ func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 		// 查看token是否无效
 		// 作降级策略当redis没有崩溃时做两个验证   严格判定用户有没有主动退出登录
 		err = m.Handler.CheckSession(ctx, uc.Ssid)
-		if err != nil  {
+		if err != nil {
 			//token 无效 或者redis出错
 			ctx.AbortWithStatus(http.StatusUnauthorized)
 			return

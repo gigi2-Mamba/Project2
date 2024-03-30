@@ -8,6 +8,11 @@ package main
 
 import (
 	"github.com/google/wire"
+	"project0/interactive/events"
+	repository2 "project0/interactive/repository"
+	cache2 "project0/interactive/repository/cache"
+	dao2 "project0/interactive/repository/dao"
+	service2 "project0/interactive/service"
 	"project0/internal/events/article"
 	"project0/internal/repository"
 	"project0/internal/repository/cache"
@@ -52,20 +57,21 @@ func InitWebServerJ() *App {
 	syncProducer := ioc.InitSyncProducer(client)
 	producer := article.NewSaramaSyncProducer(syncProducer)
 	articleService := service.NewArticleService(articleRepository, producer)
-	interactiveCache := cache.NewInteractiveCache(cmdable)
-	interactiveDAO := dao.NewInteractiveGORMDAO(db)
-	interactiveRepository := repository.NewCacheInteractiveRepository(interactiveCache, interactiveDAO, loggerV1)
-	interactiveService := service.NewInteractiveService(interactiveRepository)
-	articleHandler := web.NewArticleHandler(articleService, loggerV1, interactiveService)
+	interactiveCache := cache2.NewInteractiveCache(cmdable)
+	interactiveDAO := dao2.NewInteractiveGORMDAO(db)
+	interactiveRepository := repository2.NewCacheInteractiveRepository(interactiveCache, interactiveDAO, loggerV1)
+	interactiveService := service2.NewInteractiveService(interactiveRepository)
+	interactiveServiceClient := ioc.InitIntrClient(interactiveService)
+	articleHandler := web.NewArticleHandler(articleService, loggerV1, interactiveServiceClient)
 	engine := ioc.InitWebServer(v, userHandler, oAuth2Handler, articleHandler)
-	interactiveReadEventConsumer := article.NewInteractiveReadEventConsumer(interactiveRepository, client, loggerV1)
+	interactiveReadEventConsumer := events.NewInteractiveReadEventConsumer(interactiveRepository, client, loggerV1)
 	historyDAO := dao.NewHistoryGORMDAO(db)
 	readHistoryRepository := repository.NewCacheArticleHistoryRepository(historyDAO, interactiveCache)
 	readHistoryConsumer := article.NewReadHistoryConsumer(readHistoryRepository, client, loggerV1)
 	v3 := ioc.InitConsumers(interactiveReadEventConsumer, readHistoryConsumer)
 	rankingCache := cache.NewRankingRedisCache(cmdable)
 	rankingRepository := repository.NewCacheRankingRepository(rankingCache)
-	rankingService := service.NewBatchRankingService(interactiveService, articleService, rankingRepository)
+	rankingService := service.NewBatchRankingService(interactiveServiceClient, articleService, rankingRepository)
 	rlockClient := ioc.InitRlockClient(cmdable)
 	rankingJob := ioc.InitRankingJob(rankingService, loggerV1, rlockClient)
 	cron := ioc.InitJobs(loggerV1, rankingJob)
@@ -87,6 +93,6 @@ func InitResponseTimeFailover() *failover.ResponseTimeFailover {
 
 // wire.go:
 
-var interactiveSvcSet = wire.NewSet(service.NewInteractiveService, repository.NewCacheInteractiveRepository, cache.NewInteractiveCache, dao.NewInteractiveGORMDAO)
+var interactiveSvcSet = wire.NewSet(service2.NewInteractiveService, repository2.NewCacheInteractiveRepository, cache2.NewInteractiveCache, dao2.NewInteractiveGORMDAO)
 
 var rankSvcSet = wire.NewSet(cache.NewRankingRedisCache, repository.NewCacheRankingRepository, service.NewBatchRankingService)

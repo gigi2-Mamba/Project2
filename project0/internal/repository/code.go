@@ -8,6 +8,7 @@ import (
 // 根据链路传递的  封装了上层
 var ErrCodeVerifyTooMany = cache.ErrCodeVerifyTooMany
 var ErrCodeSendTooMany = cache.ErrCodeSendTooMany
+
 type CodeRepository interface {
 	Set(ctx context.Context, biz, phone, code string) error
 	Verify(ctx context.Context, biz, phone, code string) (bool, error)

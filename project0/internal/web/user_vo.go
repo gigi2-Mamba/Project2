@@ -1,7 +1,5 @@
 package web
 
-
-
 type SignUpReq struct { // 怎么把证
 	Email           string `json:"email"`
 	Password        string `json:"password"`

@@ -16,4 +16,3 @@ func (s *Service2) Send(ctx context.Context, tplId string, args []string, number
 	log.Println("2号服务商验证码是", args)
 	return nil
 }
-

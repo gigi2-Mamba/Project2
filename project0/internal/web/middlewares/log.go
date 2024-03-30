@@ -8,7 +8,6 @@ import (
 	"time"
 )
 
-
 //这个东西不知道什么时候写的
 /*
 构造一个日志中间件集成到gin当中
@@ -28,16 +27,14 @@ func NewLogMiddlewareBuilder(logFn func(ctx context.Context, l AccessLog)) *LogM
 	return &LogMiddlewareBuilder{logFn: logFn}
 }
 
-
-
-func (l *LogMiddlewareBuilder) AllowReqBody() *LogMiddlewareBuilder  {
+func (l *LogMiddlewareBuilder) AllowReqBody() *LogMiddlewareBuilder {
 	l.allowReqBody = true
 
 	return l
 
 }
 
-func (l *LogMiddlewareBuilder) AllowRespBody() *LogMiddlewareBuilder  {
+func (l *LogMiddlewareBuilder) AllowRespBody() *LogMiddlewareBuilder {
 	l.allowRespBody = true
 
 	return l
@@ -47,11 +44,11 @@ func (l *LogMiddlewareBuilder) AllowRespBody() *LogMiddlewareBuilder  {
 // 辅助结构体，你希望你要记录的日志都有一些什么东西
 type AccessLog struct {
 	//直接抄gin的普遍实现，也是记录http请求
-	Path     string    `json:"path"`
-	Method   string    `json:"method"`
-	ReqBody  string    `json:"reqBody"`  //
-	RespBody string    `json:"respBody"` // 要设置
-	Status   int       `json:"status"`
+	Path     string        `json:"path"`
+	Method   string        `json:"method"`
+	ReqBody  string        `json:"reqBody"`  //
+	RespBody string        `json:"respBody"` // 要设置
+	Status   int           `json:"status"`
 	Duration time.Duration `json:"duration"`
 }
 
@@ -89,14 +86,14 @@ func (l *LogMiddlewareBuilder) Build() gin.HandlerFunc {
 
 		if l.allowRespBody {
 			c.Writer = &responseWriter{
-				al: &al,
+				al:             &al,
 				ResponseWriter: c.Writer,
 			}
 		}
 
 		defer func() {
-            al.Duration = time.Since(start)
-			l.logFn(c,al)
+			al.Duration = time.Since(start)
+			l.logFn(c, al)
 		}()
 		c.Next()
 	}
@@ -114,8 +111,8 @@ func (w *responseWriter) Write(data []byte) (int, error) {
 
 }
 
-func (w *responseWriter) WriteHeader(statusCode int) () {
+func (w *responseWriter) WriteHeader(statusCode int) {
 	w.al.Status = statusCode
 
-	 w.ResponseWriter.WriteHeader(statusCode)
+	w.ResponseWriter.WriteHeader(statusCode)
 }

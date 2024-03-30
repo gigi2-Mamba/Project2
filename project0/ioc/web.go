@@ -17,8 +17,8 @@ import (
 	"time"
 )
 
-//先注册中间件
-func InitWebServer(mdls []gin.HandlerFunc, userHdl *web.UserHandler, wechatHdl *web.OAuth2Handler,articleHdl *web.ArticleHandler) *gin.Engine {
+// 先注册中间件
+func InitWebServer(mdls []gin.HandlerFunc, userHdl *web.UserHandler, wechatHdl *web.OAuth2Handler, articleHdl *web.ArticleHandler) *gin.Engine {
 	server := gin.Default()
 	server.Use(mdls...)
 	// 后续增加了handler,就要继续补充。  hdl.RegisterRoute(server) 对gin server 注册路由
@@ -29,19 +29,19 @@ func InitWebServer(mdls []gin.HandlerFunc, userHdl *web.UserHandler, wechatHdl *
 }
 
 // 要使用基于redis的ratelimit，要加入redis.cmdable
-func InitGinMiddlewares(redisClient redis.Cmdable,Hdl ijwt.Handler,l loggerDefine.LoggerV1) []gin.HandlerFunc {
-      pb :=&prometheus.Builder{
-		  Namespace: "geektime_daming",
-		  Subsystem: "webook",
-		  Name:      "gin_http",
-		  Help:      "统计 GIN 的HTTP接口数据",
-	  }
-	  ginx.InitCounter(prometheus2.CounterOpts{
-		  Namespace: "society_pay",
-		  Subsystem: "webook",
-		  Name:      "biz_code",
-		  Help:      "统计业务错误码	",
-	  })
+func InitGinMiddlewares(redisClient redis.Cmdable, Hdl ijwt.Handler, l loggerDefine.LoggerV1) []gin.HandlerFunc {
+	pb := &prometheus.Builder{
+		Namespace: "geektime_daming",
+		Subsystem: "webook",
+		Name:      "gin_http",
+		Help:      "统计 GIN 的HTTP接口数据",
+	}
+	ginx.InitCounter(prometheus2.CounterOpts{
+		Namespace: "society_pay",
+		Subsystem: "webook",
+		Name:      "biz_code",
+		Help:      "统计业务错误码	",
+	})
 	return []gin.HandlerFunc{
 		cors.New(cors.Config{
 			AllowCredentials: true, // 允许携带cookie
@@ -63,7 +63,7 @@ func InitGinMiddlewares(redisClient redis.Cmdable,Hdl ijwt.Handler,l loggerDefin
 			},
 			// 为了让前端可以拿到，后端做的 ctx.Header(key,value), 所以exposeHeaders for the header kv u set
 			//jwt token是短token,refresh token 是长token
-			ExposeHeaders: []string{"x-jwt-token","x-refresh-token"},
+			ExposeHeaders: []string{"x-jwt-token", "x-refresh-token"},
 		}), func(context *gin.Context) {
 			//log.Println("跨域通过middleware")
 		},

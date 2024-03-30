@@ -33,7 +33,7 @@ func (t *TimeFailoverSMSService) Send(ctx context.Context, tplId string, args []
 		neweIdx := (idx + 1) % int32(len(t.svcs))
 		if atomic.CompareAndSwapInt32(&t.idx, idx, neweIdx) {
 			// 切换成功，需要把超时计数重置为0
-			atomic.StoreInt32(&t.cnt,0)
+			atomic.StoreInt32(&t.cnt, 0)
 
 		}
 		// 为了给后面调用写的

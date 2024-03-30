@@ -16,10 +16,10 @@ import (
 
 // 需要注入服务
 type OAuth2Handler struct {
-	svc     wechat.Service
-	userSvc    service.UserService
-	jwtHandler ijwt.Handler
-	key        []byte
+	svc             wechat.Service
+	userSvc         service.UserService
+	jwtHandler      ijwt.Handler
+	key             []byte
 	stateCookieName string
 }
 
@@ -28,7 +28,7 @@ type StateClaims struct {
 	State string
 }
 
-func NewOAuth2Handler(svc wechat.Service, userSvc service.UserService,jwtHandler ijwt.Handler) *OAuth2Handler {
+func NewOAuth2Handler(svc wechat.Service, userSvc service.UserService, jwtHandler ijwt.Handler) *OAuth2Handler {
 	return &OAuth2Handler{
 		svc:             svc,
 		userSvc:         userSvc,
@@ -46,7 +46,7 @@ func (o *OAuth2Handler) RegisterRoutes(server *gin.Engine) {
 	//不清楚腾讯，也就是第三方会用什么http方法回调，用any直接万无一失
 	g.Any("/callback", o.CallBack)
 	g.GET("/setcookie", o.setcookie)
-	g.GET("/getcookie",o.getcookie)
+	g.GET("/getcookie", o.getcookie)
 
 }
 func (o *OAuth2Handler) setcookie(context *gin.Context) {
@@ -58,10 +58,10 @@ func (o *OAuth2Handler) setcookie(context *gin.Context) {
 func (o *OAuth2Handler) getcookie(context *gin.Context) {
 	cookie, err := context.Cookie("cookietst")
 	if err != nil {
-		context.String(http.StatusOK,"获取失败")
+		context.String(http.StatusOK, "获取失败")
 		return
 	}
-	context.String(http.StatusOK,cookie)
+	context.String(http.StatusOK, cookie)
 	log.Println("获取cookie应该成功了")
 }
 
@@ -87,19 +87,19 @@ func (o *OAuth2Handler) Auth2Url(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, Result{
 		Data: url,
 	})
-    log.Println("set cookie ")
+	log.Println("set cookie ")
 
 }
 
 // 微信回调的url
 func (o *OAuth2Handler) CallBack(ctx *gin.Context) {
 	cookieheader := ctx.GetHeader("Set-Cookie")
-	fmt.Println("dgegnegne ",cookieheader)
-	log.Println(cookieheader == "","HHHHHHH")
+	fmt.Println("dgegnegne ", cookieheader)
+	log.Println(cookieheader == "", "HHHHHHH")
 	log.Println("cookie 是否设置成功")
 	err := o.verifyState(ctx)
 	if err != nil {
-		log.Println("微信回调错误? ",err)
+		log.Println("微信回调错误? ", err)
 		ctx.JSON(http.StatusOK, Result{
 			Msg:  "非法请求",
 			Code: 4,
@@ -139,12 +139,11 @@ func (o *OAuth2Handler) CallBack(ctx *gin.Context) {
 	//		Msg: "加密jwt有误",
 	//	})
 	//}
-	err = o.jwtHandler.SetLoginJWTToken(ctx,u.Id)
+	err = o.jwtHandler.SetLoginJWTToken(ctx, u.Id)
 	if err != nil {
-		log.Println("setLoginJwt failed: ",err)
-		ctx.String(http.StatusOK,"系统错误")
+		log.Println("setLoginJwt failed: ", err)
+		ctx.String(http.StatusOK, "系统错误")
 	}
-
 
 	ctx.JSON(http.StatusOK, Result{
 		Msg: "微信扫码登录成功",
@@ -154,11 +153,11 @@ func (o *OAuth2Handler) CallBack(ctx *gin.Context) {
 
 func (o *OAuth2Handler) verifyState(ctx *gin.Context) error {
 	state := ctx.Query("state")
-	log.Println("statecookiename ",o.stateCookieName)
+	log.Println("statecookiename ", o.stateCookieName)
 	ck, err := ctx.Cookie(o.stateCookieName)
-	log.Println("whether is cookie get error : ",err)
+	log.Println("whether is cookie get error : ", err)
 	if err != nil {
-		log.Println("无法获取cooke state,err",err)
+		log.Println("无法获取cooke state,err", err)
 
 		return fmt.Errorf("无法获取cooke state,err %s ", err)
 	}
@@ -178,7 +177,6 @@ func (o *OAuth2Handler) verifyState(ctx *gin.Context) error {
 	return nil
 }
 
-
 func (o *OAuth2Handler) setStateCookie(ctx *gin.Context, state string) error {
 	claims := StateClaims{
 		State: state,
@@ -187,14 +185,13 @@ func (o *OAuth2Handler) setStateCookie(ctx *gin.Context, state string) error {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
 	tokenStr, err := token.SignedString(o.key)
 	if err != nil {
-		log.Println("token err: ",err)
+		log.Println("token err: ", err)
 		//ctx.JSON(http.StatusOK, Result{
 		//	Msg:  "服务器异常",
 		//	Code: 5,
 		//})
-		return fmt.Errorf("token加密，cookiestate 错误 %s",err.Error())
+		return fmt.Errorf("token加密，cookiestate 错误 %s", err.Error())
 	}
-
 
 	ctx.SetCookie(o.stateCookieName, tokenStr,
 		600, "/oauth2/wechat/callback",
@@ -202,5 +199,3 @@ func (o *OAuth2Handler) setStateCookie(ctx *gin.Context, state string) error {
 
 	return nil
 }
-
-

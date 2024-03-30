@@ -6,6 +6,7 @@ import (
 	"github.com/ecodeclub/ekit/slice"
 	"log"
 	"math"
+	intrv1 "project0/api/proto/gen/api/proto/intr/v1"
 	"project0/internal/repository"
 
 	//"github.com/ecodeclub/ekit/queue"
@@ -26,25 +27,27 @@ type RankingService interface {
 }
 
 type BatchRankingService struct {
-    interSvc InteractiveService
-	artSvc  ArticleService
-	batchSize int   // 批次大小，一批取多大也就是limit
-	scoreFunc func(likeCnt int64,utime time.Time) float64
-	n int   //热榜，前n个，控制传多少个
+	//interSvc service.InteractiveService
+	//切换为微服务实现
+	interSvc intrv1.InteractiveServiceClient
+	artSvc   ArticleService
+	batchSize int // 批次大小，一批取多大也就是limit
+	scoreFunc func(likeCnt int64, utime time.Time) float64
+	n         int //热榜，前n个，控制传多少个
 	// 加入缓存
-	repo   repository.RankingRepository
+	repo repository.RankingRepository
 }
 
-func NewBatchRankingService(inter InteractiveService, article ArticleService,repo repository.RankingRepository) RankingService {
+func NewBatchRankingService(inter intrv1.InteractiveServiceClient, article ArticleService, repo repository.RankingRepository) RankingService {
 	return &BatchRankingService{
-		interSvc: inter,
-		artSvc: article,
-	    batchSize: 100,
-		n: 100,
+		interSvc:  inter,
+		artSvc:    article,
+		batchSize: 100,
+		n:         100,
 		//在New的时候直接初始化func的手段,应该是在new直接写死了。 内部锁死。
-	    scoreFunc: func(likeCnt int64, utime time.Time) float64 {
-           duration := time.Since(utime).Seconds()
-		   return   float64(likeCnt - 1) / math.Pow(duration+2,1.5)
+		scoreFunc: func(likeCnt int64, utime time.Time) float64 {
+			duration := time.Since(utime).Seconds()
+			return float64(likeCnt-1) / math.Pow(duration+2, 1.5)
 		},
 		repo: repo,
 	}
@@ -55,72 +58,76 @@ func (b *BatchRankingService) GetTopN(ctx context.Context) ([]domain.Article, er
 }
 
 func (b *BatchRankingService) TopN(ctx context.Context) error {
-	arts,err := b.topN(ctx)
+	arts, err := b.topN(ctx)
 	//_,err := b.topN(ctx)
 	if err != nil {
 		return err
 	}
 	// 最终要存到缓存里面的
-	return b.repo.ReplaceTopN(ctx,arts)
+	return b.repo.ReplaceTopN(ctx, arts)
 }
 
 // 起初这么写，是绕开了缓存，更加好测。  单元测试先测这里
 // 获取数据库前n条的数据及点赞总数
 func (b *BatchRankingService) topN(ctx context.Context) ([]domain.Article, error) {
-     //在这里找出热榜数据
+	//在这里找出热榜数据
 	//获取前n条数据
 	offset := 0
-	start:= time.Now()
+	start := time.Now()
 	ddl := start.Add(-7 * 24 * time.Hour)
 
 	type Score struct {
 		score float64
-		art domain.Article
+		art   domain.Article
 	}
 	// 得到一个优先队列.  得到优先队列吗，没什么好说的用ekit，后期也可以自己写自己的ekit
-    // 为什么这个叫做topn?
-	topN :=  queue.NewPriorityQueue(b.n, func(src Score, dst Score) int {
-           if   src .score > dst.score {
-			   return 1
-		   } else if src.score == dst.score {
-			   return 0
-		   } else {
-			   return -1
-		   }
+	// 为什么这个叫做topn?
+	topN := queue.NewPriorityQueue(b.n, func(src Score, dst Score) int {
+		if src.score > dst.score {
+			return 1
+		} else if src.score == dst.score {
+			return 0
+		} else {
+			return -1
+		}
 	})
-       //为什么这里要用for?，有多批，以下代码是一次处理流程
-	for  {
+	//为什么这里要用for?，有多批，以下代码是一次处理流程
+	for {
 		//取数据，取批量的article
-		arts ,err := b.artSvc.ListPub(ctx,start,offset,b.batchSize)
+		arts, err := b.artSvc.ListPub(ctx, start, offset, b.batchSize)
 		if err != nil {
-			log.Println("error is cron : top n: ",err)
+			log.Println("error is cron : top n: ", err)
 			return nil, err
 		}
 		//if len(arts) == 0 {
 		//	break
 		//}
-        //ekit的slice.Map将一个切片转换成另外一个切片。泛型。计算原切片的长度，然后提供元素转换func，然后for range逐个转换
+		//ekit的slice.Map将一个切片转换成另外一个切片。泛型。计算原切片的长度，然后提供元素转换func，然后for range逐个转换
 		//利用到的只是。append.
-		ids := slice.Map(arts, func(idx int,art domain.Article) int64 {
+		ids := slice.Map(arts, func(idx int, art domain.Article) int64 {
 			return art.Id
 		})
 
-		intrMap, err := b.interSvc.GetByIds(ctx, "article", ids)
+		intrResp, err := b.interSvc.GetByIds(ctx, &intrv1.GetByIdsRequest{
+			Ids: ids,
+			Biz: "article",
+		})
 		if err != nil {
 			return nil, err
 		}
-		for _,art := range arts{
-			intr := intrMap[art.Id]
-			score := b.scoreFunc(intr.LikeCnt,art.Utime)
+		for _, art := range arts {
+			intr := intrResp.Intrs[art.Id]
+			score := b.scoreFunc(intr.LikeCnt, art.Utime)
 			ele := Score{
 				score: score,
-				art: art,
+				art:   art,
 			}
 			//入队有检测是否淘汰替换
 			err = topN.Enqueue(ele)
-			if err ==  queue.ErrOutOfCapacity  {
-				//拿出最小元素
-				minEle,_ := topN.Dequeue()
+			// 入队发现已经满了
+			if err == queue.ErrOutOfCapacity {
+				//拿出最小元素 和要入队的元素比较，小于要入队的就入队，自动调整。
+				minEle, _ := topN.Dequeue()
 				if minEle.score < score {
 					topN.Enqueue(ele)
 				} else {
@@ -133,20 +140,16 @@ func (b *BatchRankingService) topN(ctx context.Context) ([]domain.Article, error
 		offset = offset + len(arts)
 		//没有取够一批，我们就直接中断执行
 		if len(arts) < b.batchSize ||
-			arts[len(arts)-1].Utime.Before(ddl){
+			arts[len(arts)-1].Utime.Before(ddl) {
 			break
 		}
 	}
 
-	res := make([]domain.Article,topN.Len())
+	res := make([]domain.Article, topN.Len())
 	// 因为小顶堆的特性，反着来。
-	for i := topN.Len()-1; i >= 0 ; i-- {
-		ele,_ := topN.Dequeue()
+	for i := topN.Len() - 1; i >= 0; i-- {
+		ele, _ := topN.Dequeue()
 		res[i] = ele.art
 	}
-  return res,nil
+	return res, nil
 }
-
-
-
-

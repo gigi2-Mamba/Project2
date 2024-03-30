@@ -102,10 +102,9 @@ func (svc *userService) FindOrCreateByWechat(ctx context.Context, wechatInfo dom
 		return u, err
 	}
 
-    // 这边意味新用户进来
+	// 这边意味新用户进来
 	// json格式的
-	zap.L().Info("新用户",zap.Any("wechatInfo",wechatInfo))
-
+	zap.L().Info("新用户", zap.Any("wechatInfo", wechatInfo))
 
 	err = svc.CreateUser(ctx, u)
 

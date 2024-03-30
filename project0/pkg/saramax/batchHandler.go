@@ -25,7 +25,7 @@ func (b *BatchHandler[T]) Cleanup(session sarama.ConsumerGroupSession) error {
 	return nil
 }
 
-//  以後可以尝试重复写多次这个方法来掌握批量消费
+// 以後可以尝试重复写多次这个方法来掌握批量消费
 func (b *BatchHandler[T]) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	//先把消息搞出来
 	msgs := claim.Messages()
@@ -42,24 +42,24 @@ func (b *BatchHandler[T]) ConsumeClaim(session sarama.ConsumerGroupSession, clai
 			case <-ctx.Done():
 				done = true
 			case msg, ok := <-msgs:
-					if !ok {
-						// 消息通道关闭
-						cancel()
-						return nil
-					}
-					//batch = append(batch,msg)
-					var t T
+				if !ok {
+					// 消息通道关闭
+					cancel()
+					return nil
+				}
+				//batch = append(batch,msg)
+				var t T
 				err := json.Unmarshal(msg.Value, &t)
 				if err != nil {
 					b.l.Error("反序列化消息失败",
-						loggerDefine.String("topic",msg.Topic),
-						loggerDefine.Int32("partition",msg.Partition),
-						loggerDefine.Int64("offset",msg.Offset),
+						loggerDefine.String("topic", msg.Topic),
+						loggerDefine.Int32("partition", msg.Partition),
+						loggerDefine.Int64("offset", msg.Offset),
 						loggerDefine.Error(err))
 					continue
 				}
-				batch = append(batch,msg)
-				ts = append(ts,t)
+				batch = append(batch, msg)
+				ts = append(ts, t)
 			}
 		}
 		cancel()
@@ -69,6 +69,7 @@ func (b *BatchHandler[T]) ConsumeClaim(session sarama.ConsumerGroupSession, clai
 			b.l.Error("处理消息失败",
 				// 把真个 msgs 都记录下来
 				loggerDefine.Error(err))
+			
 		}
 		for _, msg := range batch {
 			session.MarkMessage(msg, "")

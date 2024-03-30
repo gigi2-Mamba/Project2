@@ -14,6 +14,7 @@ import (
 	"project0/internal/web/ijwt"
 	"testing"
 )
+
 type ArticleHandlerSuite struct {
 	suite.Suite
 	db     *gorm.DB

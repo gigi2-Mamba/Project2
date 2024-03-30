@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"project0/internal/service/sms/failover"
 	"project0/ioc"
+	"sync"
 	"time"
 )
 
@@ -30,12 +31,12 @@ func initViper() error {
 		//log.Println("读取配置有误",err)
 		panic(err)
 	}
-	log.Println("println viper ",viper.Get("test.value1"))
-    return nil
+	log.Println("println viper ", viper.Get("test.value1"))
+	return nil
 }
 
 func initViperV1() error {
-	viper.SetConfigFile("./config/dev.yaml")  // 直接指定文件位置
+	viper.SetConfigFile("./config/dev.yaml") // 直接指定文件位置
 
 	viper.SetConfigType("yaml")
 	err := viper.ReadInConfig()
@@ -43,13 +44,14 @@ func initViperV1() error {
 		//log.Println("读取配置有误",err)
 		panic(err)
 	}
-	log.Println("println viper ",viper.Get("test.value1"))
+	log.Println("println viper ", viper.Get("test.value1"))
 	return nil
 }
 
 // 依赖goland的configuration
 func initViperDiffEnv() error {
-	cfgFile := pflag.String("config","config/dev.yaml","配置文件路径")
+	// programmer flag
+	cfgFile := pflag.String("config", "config/dev.yaml", "配置文件路径")
 	pflag.Parse()
 	viper.SetConfigFile(*cfgFile)
 	err := viper.ReadInConfig()
@@ -57,7 +59,8 @@ func initViperDiffEnv() error {
 		//log.Println("读取配置有误",err)
 		panic(err)
 	}
-	log.Println("println viper ",viper.Get("test.value1"))
+	// viper.Get只是为了测试。
+	log.Println("println viper ", viper.Get("test.value1"))
 	return nil
 }
 
@@ -76,7 +79,7 @@ func initViperWatchRemote() error {
 	if err != nil {
 		panic(err)
 	}
-    // 这个不合理啊   change再打印，何必隔段时间就打印呢？
+	// 这个不合理啊   change再打印，何必隔段时间就打印呢？
 	go func() {
 		for {
 			err = viper.WatchRemoteConfig()
@@ -87,11 +90,12 @@ func initViperWatchRemote() error {
 			time.Sleep(10e9)
 		}
 	}()
-   return nil
+
+	return nil
 }
 
 func initViperWatch() error {
-	cfgFile := pflag.String("config","config/dev.yaml","配置文件路径")
+	cfgFile := pflag.String("config", "config/dev.yaml", "配置文件路径")
 	pflag.Parse()
 	viper.SetConfigFile(*cfgFile)
 	err := viper.ReadInConfig()
@@ -99,20 +103,20 @@ func initViperWatch() error {
 		//log.Println("读取配置有误",err)
 		panic(err)
 	}
-   //viper.Set
+	//viper.Set
 	//v := viper.New()
 	//viper.Debug()
 	//viper.M
 
 	viper.WatchConfig()
-	viper.OnConfigChange(func(in fsnotify.Event) {
-		log.Println("HERE CHAGNE: ",viper.GetString("test.value1"))
-	})
+	//viper.OnConfigChange(func(in fsnotify.Event) {
+	//	log.Println("HERE CHAGNE: ", viper.GetString("test.value1"))
+	//})
 
-	log.Println("println viper ",viper.Get("test.value1"))
+	log.Println("println viper ", viper.Get("test.value1"))
 	return nil
 }
-func InitLogger()  {
+func InitLogger() {
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		panic(err)
@@ -120,9 +124,9 @@ func InitLogger()  {
 	// 用自定义的logger代替全局logger
 	zap.ReplaceGlobals(logger)
 }
-func InitPrometheus()  {
+func InitPrometheus() {
 	go func() {
-		http.Handle("/metrics",promhttp.Handler())
+		http.Handle("/metrics", promhttp.Handler())
 		http.ListenAndServe(":8081", nil)
 	}()
 
@@ -135,23 +139,25 @@ func main() {
 	//	//log.Println("mysqlInit init success")
 	//	server := initWebServer()
 	//err := initViperWatchRemote()
-	err := initViperV1()
+	err := initViperWatch()
 	InitLogger()
 	tpCancel := ioc.InitOTEL()
 	defer func() {
-		ctx,cancel := context.WithTimeout(context.Background(),time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
 		tpCancel(ctx)
 
 	}()
+	sync.Pool
+	sync.Map
 	if err != nil {
 		log.Println("panic in readconfig")
 		panic(err)
 	}
 
-	app :=InitWebServerJ()
+	app := InitWebServerJ()
 	InitPrometheus()
-	for _,c := range app.consumers {
+	for _, c := range app.consumers {
 		//log.Println("consumer is : ",c)
 		err := c.Start()
 		if err != nil {

@@ -14,9 +14,9 @@ Date: 2024/2/23  周五
 Time: 15:44
 */
 
-//这是为了基于mysql实现的分布式调度平台实现的jobservice
+// 这是为了基于mysql实现的分布式调度平台实现的jobservice
 type CronJobService interface {
-	Preempt(ctx context.Context) (domain.Job,error)
+	Preempt(ctx context.Context) (domain.Job, error)
 	ResetNextTime(ctx context.Context, job domain.Job) error
 	// 设计直觉,第一种方法。 但是还有第二种更牛逼的在领域服务中处理. 所以第一种没实现。
 	//Release(ctx context.Context,job domain.Job) error
@@ -27,7 +27,7 @@ type CronJobService interface {
 // service惯用伎俩，把接口变小写变实例
 
 type cronjobService struct {
-	l loggerDefine.LoggerV1
+	l    loggerDefine.LoggerV1
 	repo repository.CronJobRepository
 	//抢占到job,要续约。
 	refreshInterval time.Duration
@@ -35,27 +35,27 @@ type cronjobService struct {
 
 func newCronjobService(l loggerDefine.LoggerV1, repo repository.CronJobRepository, refreshInterval time.Duration) *cronjobService {
 	return &cronjobService{
-		l: l,
-		repo: repo,
+		l:               l,
+		repo:            repo,
 		refreshInterval: refreshInterval}
 }
 
-func (c *cronjobService) ResetNextTime(ctx context.Context, j domain.Job) error  {
+func (c *cronjobService) ResetNextTime(ctx context.Context, j domain.Job) error {
 	nextTime := j.NextTime()
-	return  c.repo.UpdateNextTime(ctx,j.Id,nextTime)
+	return c.repo.UpdateNextTime(ctx, j.Id, nextTime)
 }
 
 func (c *cronjobService) Preempt(ctx context.Context) (domain.Job, error) {
-    j,err := c.repo.Preempt(ctx)
+	j, err := c.repo.Preempt(ctx)
 
 	if err != nil {
 		return domain.Job{}, err
 	}
 
 	ticker := time.NewTicker(c.refreshInterval)
-    go func() {
+	go func() {
 		//这个for range语法他妈的是哪里来的
-		for range ticker.C  {
+		for range ticker.C {
 			c.refresh(j.Id)
 		}
 	}()
@@ -63,30 +63,27 @@ func (c *cronjobService) Preempt(ctx context.Context) (domain.Job, error) {
 		//关闭续约，避免goroutine泄漏
 		ticker.Stop()
 		// 释放锁，很快. 不能使用入参的ctx，入参ctx天然会过期。抢占就用不上。
-		ctx,cancel := context.WithTimeout(context.Background(),time.Second *1)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 		defer cancel()
-        err :=c.repo.Release(ctx,j.Id)
+		err := c.repo.Release(ctx, j.Id)
 		if err != nil {
 			c.l.Error("释放job失败",
 				loggerDefine.Error(err),
-				loggerDefine.Int64("jid",j.Id))
+				loggerDefine.Int64("jid", j.Id))
 		}
 	}
 
-
-   return j, err
-
+	return j, err
 
 }
 
-
 func (c *cronjobService) refresh(id int64) {
 	//本质上更新一个更新时间
-	ctx,cancel := context.WithTimeout(context.Background(),time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	err := c.repo.UpdateTime(ctx,id)
+	err := c.repo.UpdateTime(ctx, id)
 	if err != nil {
-		c.l.Error("job续约失败",loggerDefine.Error(err),
-			loggerDefine.Int64("jid",id))
+		c.l.Error("job续约失败", loggerDefine.Error(err),
+			loggerDefine.Int64("jid", id))
 	}
 }

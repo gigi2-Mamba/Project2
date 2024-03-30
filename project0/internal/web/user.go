@@ -103,7 +103,7 @@ func (u *UserHandler) Signup(ctx *gin.Context, req SignUpReq) (ginx.Result, erro
 			Msg:  "请至少包含数字，特殊字符，字母，整体长度8到16",
 		}, nil
 	}
-    // 保证万无一失，使用这个context
+	// 保证万无一失，使用这个context
 	err = u.svc.Signup(ctx.Request.Context(), domain.User{
 		Email:    req.Email,
 		Password: req.Password,
@@ -286,16 +286,15 @@ func (u *UserHandler) Profile(ctx *gin.Context) {
 
 	err := u.svc.Profile(ctx, uc.Uid)
 	if err != nil {
-		log.Println("系统错误，个人简介获取",err)
+		log.Println("系统错误，个人简介获取", err)
 		ctx.String(http.StatusOK, "系统错误，个人简介")
 		return
 	}
 	ctx.String(http.StatusOK, "个人简介展示成功")
 }
 
-func (u *UserHandler) LoginJWT(ctx *gin.Context,req LoginReq) (ginx.Result,error) {
+func (u *UserHandler) LoginJWT(ctx *gin.Context, req LoginReq) (ginx.Result, error) {
 
-	
 	user, err := u.svc.Login(ctx, req.Email, req.Password)
 
 	switch err {
@@ -314,42 +313,41 @@ func (u *UserHandler) LoginJWT(ctx *gin.Context,req LoginReq) (ginx.Result,error
 		if err != nil {
 			return ginx.Result{
 				Code: 5,
-				Msg:"系统错误",
-			},err
+				Msg:  "系统错误",
+			}, err
 		}
 
 		return ginx.Result{
-			Msg:"登录成功",
-		},err
+			Msg: "登录成功",
+		}, err
 	case service.ErrInvalidUserOrPassword:
 		return ginx.Result{
 			Code: 4,
-			Msg:"用户名或密码不对",
-		},nil
+			Msg:  "用户名或密码不对",
+		}, nil
 	default:
 		return ginx.Result{
 			Code: 5,
-			Msg:"系统错误",
-		},err
+			Msg:  "系统错误",
+		}, err
 	}
 }
 
-func (u *UserHandler) SendLoginCode(ctx *gin.Context,req SendLoginCodeReq) (ginx.Result,error) {
-
+func (u *UserHandler) SendLoginCode(ctx *gin.Context, req SendLoginCodeReq) (ginx.Result, error) {
 
 	if req.Phone == "" {
-		return  ginx.Result{
+		return ginx.Result{
 			Code: 4,
 			Msg:  "请输入手机号",
-		},nil
+		}, nil
 	}
-	err, _:= u.code.SendFaker(ctx, bizLogin, req.Phone)
+	err, _ := u.code.SendFaker(ctx, bizLogin, req.Phone)
 
 	switch err {
 	case nil:
-		return  ginx.Result{
-			Msg:  "发送成功",
-		},nil
+		return ginx.Result{
+			Msg: "发送成功",
+		}, nil
 	case service.ErrCodeSendTooMany:
 		//ctx.JSON(http.StatusOK, Result{
 		//	Msg: "短信发送太频繁，请稍后再试",
@@ -357,10 +355,10 @@ func (u *UserHandler) SendLoginCode(ctx *gin.Context,req SendLoginCodeReq) (ginx
 		//频繁但是正常找不到原因
 		//一直有warning的话要排查
 		//zap.L().Warn("频繁发送验证码")
-		return  ginx.Result{
+		return ginx.Result{
 			Code: 5,
 			Msg:  "发送验证码服务端繁忙",
-		},err
+		}, err
 	default:
 		ctx.JSON(http.StatusOK, Result{
 			Msg:  "系统错误",
@@ -373,20 +371,19 @@ func (u *UserHandler) SendLoginCode(ctx *gin.Context,req SendLoginCodeReq) (ginx
 
 		fmt.Println("zap 原生")
 		zap.L().Error("发送验证码有误", zap.Error(err))
-		return  ginx.Result{
+		return ginx.Result{
 			Code: 5,
 			Msg:  "发送验证码服务端繁忙",
-		},err
+		}, err
 	}
 
 	//log.Println(fakerCode)
-	return  ginx.Result{
-		Msg:  "发送成功",
-	},nil
+	return ginx.Result{
+		Msg: "发送成功",
+	}, nil
 }
 
-func (u *UserHandler) LoginSms(ctx *gin.Context,req LoginSmsReq)(ginx.Result,error) {
-
+func (u *UserHandler) LoginSms(ctx *gin.Context, req LoginSmsReq) (ginx.Result, error) {
 
 	log.Println("a.code : ", req.Code)
 	if req.Phone == "" {
@@ -394,7 +391,7 @@ func (u *UserHandler) LoginSms(ctx *gin.Context,req LoginSmsReq)(ginx.Result,err
 		return ginx.Result{
 			Code: 4,
 			Msg:  "请输入手机号",
-		},nil
+		}, nil
 	}
 
 	ok, err := u.code.Verify(ctx, bizLogin, req.Phone, req.Code)
@@ -402,14 +399,14 @@ func (u *UserHandler) LoginSms(ctx *gin.Context,req LoginSmsReq)(ginx.Result,err
 		return ginx.Result{
 			Code: 5,
 			Msg:  "验证发送繁忙",
-		},err
+		}, err
 
 	}
 	if !ok {
 		return ginx.Result{
 			Code: 5,
 			Msg:  "验证码错误，请重新输入",
-		},err
+		}, err
 	}
 
 	user, err := u.svc.FindOrCreate(ctx, req.Phone)
@@ -417,16 +414,16 @@ func (u *UserHandler) LoginSms(ctx *gin.Context,req LoginSmsReq)(ginx.Result,err
 		ctx.String(http.StatusOK, err.Error())
 		return ginx.Result{
 			Code: 5,
-			Msg: "系统错误",
-		},err
+			Msg:  "系统错误",
+		}, err
 	}
 
 	err = u.jwtHandler.SetLoginJWTToken(ctx, user.Id)
 	if err != nil {
 		return ginx.Result{
 			Code: 5,
-			Msg: "系统错误",
-		},err
+			Msg:  "系统错误",
+		}, err
 	}
 
 	return ginx.Result{

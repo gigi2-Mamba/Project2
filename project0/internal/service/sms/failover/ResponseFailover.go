@@ -15,10 +15,10 @@ import (
 本次超时机制超过限定的响应时间或者这次响应时间到达上次的2.5倍
 */
 type ResponseTimeFailover struct {
-	smss      []sms.Service
-	respTime  int64
-	limiter   limiter.Limiter
-	limited   bool
+	smss     []sms.Service
+	respTime int64
+	limiter  limiter.Limiter
+	limited  bool
 	// 最大接口响应时间
 	threshold int64
 	// 当前节点服务商
@@ -50,22 +50,21 @@ func (r *ResponseTimeFailover) Send(ctx context.Context, tplId string, args []st
 	}
 	// 达到限流限制，同步转异步
 	if r.limited {
-		log.Println("发送验证码频繁触发限流,当前下表为： ",idx)
+		log.Println("发送验证码频繁触发限流,当前下表为： ", idx)
 		req := newReq(ctx, tplId, args, idx+1, numbers...)
 		ReqChan <- req
 		return nil
 
 	}
 
-
 	err = r.smss[idx].Send(ctx, tplId, args, numbers...)
 
 	spendTime := int64(math.Ceil(time.Now().Sub(start).Seconds()))
 
-	log.Printf("spendtime is %v, lastSpent is %v",spendTime,lastSpent)
-	atomic.StoreInt64(&r.respTime,spendTime)
+	log.Printf("spendtime is %v, lastSpent is %v", spendTime, lastSpent)
+	atomic.StoreInt64(&r.respTime, spendTime)
 	// 服务商崩溃 // 服务商崩溃响应时间超过两秒
-	if spendTime >= r.threshold || spendTime / lastSpent == r.diff {
+	if spendTime >= r.threshold || spendTime/lastSpent == r.diff {
 		log.Println("服务商崩溃")
 		req := newReq(ctx, tplId, args, idx+1, numbers...)
 		ReqChan <- req
@@ -79,7 +78,7 @@ func NewResponseTimeFailover(smss []sms.Service, limiter limiter.Limiter, thresh
 		limiter:   limiter,
 		threshold: threshold,
 		key:       key,
-		diff: diff,
-		respTime: diff,
+		diff:      diff,
+		respTime:  diff,
 	}
 }

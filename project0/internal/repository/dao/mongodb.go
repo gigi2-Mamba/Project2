@@ -83,23 +83,23 @@ func (m *MongoDBArticleDAO) Sync(ctx context.Context, art Article) (int64, error
 		err error
 	)
 	if id > 0 {
-		err = m.UpdateById(ctx,art)
+		err = m.UpdateById(ctx, art)
 	} else {
 		//art.Ctime = now
 		_, err = m.Insert(ctx, art)
 	}
 	if err != nil {
-		return 0,err
+		return 0, err
 	}
 	art.Id = id
 	now := time.Now().UnixMilli()
 	art.Utime = now
 	// livecol 是upsert语义
 	filter := bson.M{"id": art.Id, "author_id": art.AuthorId}
-	set := bson.D{bson.E{Key: "$set",Value: art},
-		bson.E{Key: "$setOnInsert",Value: bson.M{"ctime":now}}}   // "$setOnInsert  只有插入的时候，也就是article不存在的时候，新建才会更新ctime
-	_, err = m.liveCol.UpdateOne(ctx, filter, set,options.Update().SetUpsert(true))
-	return id,err
+	set := bson.D{bson.E{Key: "$set", Value: art},
+		bson.E{Key: "$setOnInsert", Value: bson.M{"ctime": now}}} // "$setOnInsert  只有插入的时候，也就是article不存在的时候，新建才会更新ctime
+	_, err = m.liveCol.UpdateOne(ctx, filter, set, options.Update().SetUpsert(true))
+	return id, err
 }
 
 func (m *MongoDBArticleDAO) SyncStatus(ctx context.Context, id int64, uid int64, status uint8) error {

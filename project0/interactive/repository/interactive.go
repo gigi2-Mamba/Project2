@@ -3,15 +3,20 @@ package repository
 import (
 	"context"
 	"github.com/ecodeclub/ekit/slice"
-	"project0/internal/domain"
-	"project0/internal/repository/cache"
-	"project0/internal/repository/dao"
+	"gorm.io/gorm"
+	"project0/interactive/domain"
+	"project0/interactive/repository/cache"
+	dao "project0/interactive/repository/dao"
+
 	"project0/pkg/loggerDefine"
 )
 
 // Created by Changer on 2024/2/9.
 // Copyright 2024 programmer.
 
+var (
+	ErrRecordNotFound = gorm.ErrRecordNotFound
+)
 type InteractiveRepository interface {
 	IncrReadCnt(ctx context.Context, biz string, bizId int64) error
 	IncrLikeCnt(ctx context.Context, biz string, id int64, uid int64) error
@@ -20,7 +25,7 @@ type InteractiveRepository interface {
 	Get(ctx context.Context, biz string, id int64) (domain.Interactive, error)
 	Liked(ctx context.Context, biz string, id int64, uid int64) (bool, error)
 	Collected(ctx context.Context, biz string, id int64, uid int64) (bool, error)
-	BatchIncrReadCnt(ctx context.Context, bizs []string, bids []int64) error
+	//BatchIncrReadCnt(ctx context.Context, bizs []string, bids []int64) error
 	GetByIds(ctx context.Context, biz string, ids []int64) ([]domain.Interactive, error)
 }
 
@@ -76,7 +81,7 @@ func (c *CacheInteractiveRepository) Liked(ctx context.Context, biz string, id i
 	switch err {
 	case nil:
 		return true, nil
-	case dao.ErrRecordNotFound:
+	case ErrRecordNotFound:
 		return false, nil
 	default:
 		return false, err
@@ -89,7 +94,7 @@ func (c *CacheInteractiveRepository) Collected(ctx context.Context, biz string, 
 	switch err {
 	case nil:
 		return true, nil
-	case dao.ErrRecordNotFound:
+	case ErrRecordNotFound:
 		return false, nil
 	default:
 		return false, err
@@ -143,28 +148,30 @@ func (c *CacheInteractiveRepository) IncrReadCnt(ctx context.Context, biz string
 
 }
 
-func (c *CacheInteractiveRepository) BatchIncrReadCnt(ctx context.Context, bizs []string, bizIds []int64) error {
-	// 统计阅读书应该先走数据库
-	err := c.dao.BatchIncrReadCnt(ctx, bizs, bizIds)
 
-	if err != nil {
-		return err
-	}
-	// 这时候要写缓存了
-	// 复用原有单个增加阅读数的方法，redis可以顶得住。  差别不大
-	go func() {
-		for i := 0; i < len(bizs); i++ {
-			er := c.cache.IncrReadCntIFPresent(ctx, bizs[i], bizIds[i])
-			if er != nil {
-				c.l.Error("增加阅读数缓存失败,少一个两个无所谓？", loggerDefine.Error(er))
-			}
-
-		}
-	}()
-
-	return nil
-
-}
+// 因为拆分微服务注释掉
+//func (c *CacheInteractiveRepository) BatchIncrReadCnt(ctx context.Context, bizs []string, bizIds []int64) error {
+//	// 统计阅读书应该先走数据库
+//	err := c.dao.BatchIncrReadCnt(ctx, bizs, bizIds)
+//
+//	if err != nil {
+//		return err
+//	}
+//	// 这时候要写缓存了
+//	// 复用原有单个增加阅读数的方法，redis可以顶得住。  差别不大
+//	go func() {
+//		for i := 0; i < len(bizs); i++ {
+//			er := c.cache.IncrReadCntIFPresent(ctx, bizs[i], bizIds[i])
+//			if er != nil {
+//				c.l.Error("增加阅读数缓存失败,少一个两个无所谓？", loggerDefine.Error(er))
+//			}
+//
+//		}
+//	}()
+//
+//	return nil
+//
+//}
 
 func (c *CacheInteractiveRepository) toDomain(ie dao.Interactive) domain.Interactive {
 	return domain.Interactive{

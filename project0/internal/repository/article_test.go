@@ -24,18 +24,18 @@ func TestCacheArticleRepository_SyncV1(t *testing.T) {
 				// 先要mockgen
 				authorDAO := daomocks.NewMockArticleAuthorDAO(ctrl)
 				authorDAO.EXPECT().Create(gomock.Any(), dao.Article{
-					Title:   "我的标题",
-					Content: "我的内容",
-				    AuthorId: 123,
-					},
+					Title:    "我的标题",
+					Content:  "我的内容",
+					AuthorId: 123,
+				},
 				).Return(int64(1), nil)
 				readerDAO := daomocks.NewMockArticleReaderDAO(ctrl)
 				readerDAO.EXPECT().Upsert(gomock.Any(), dao.Article{
-                     Id: 1,
-					Title:   "我的标题",
-					Content: "我的内容",
+					Id:       1,
+					Title:    "我的标题",
+					Content:  "我的内容",
 					AuthorId: 123,
-					},).Return(nil)
+				}).Return(nil)
 				return authorDAO, readerDAO
 
 			},
@@ -44,36 +44,36 @@ func TestCacheArticleRepository_SyncV1(t *testing.T) {
 				Content: "我的内容",
 				Author: domain.Author{
 					Id: 123,
-				},},
+				}},
 			wantId: 1},
 		{name: "修改同步成功",
 			mock: func(ctrl *gomock.Controller) (dao.ArticleAuthorDAO, dao.ArticleReaderDAO) {
 				// 先要mockgen
 				authorDAO := daomocks.NewMockArticleAuthorDAO(ctrl)
 				authorDAO.EXPECT().Update(gomock.Any(), dao.Article{
-					Id: 11,
-					Title:   "我的标题",
-					Content: "我的内容",
+					Id:       11,
+					Title:    "我的标题",
+					Content:  "我的内容",
 					AuthorId: 123,
 				},
-				).Return( nil)
+				).Return(nil)
 				readerDAO := daomocks.NewMockArticleReaderDAO(ctrl)
 				readerDAO.EXPECT().Upsert(gomock.Any(), dao.Article{
-					Id: 11,
-					Title:   "我的标题",
-					Content: "我的内容",
+					Id:       11,
+					Title:    "我的标题",
+					Content:  "我的内容",
 					AuthorId: 123,
-				},).Return(nil)
+				}).Return(nil)
 				return authorDAO, readerDAO
 
 			},
 			art: domain.Article{
-				Id: 11,
+				Id:      11,
 				Title:   "我的标题",
 				Content: "我的内容",
 				Author: domain.Author{
 					Id: 123,
-				},},
+				}},
 			wantId: 11},
 	}
 

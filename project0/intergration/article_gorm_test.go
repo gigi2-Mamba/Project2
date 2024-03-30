@@ -47,7 +47,7 @@ func (s *ArticleHandlerSuite) SetupSuite() {
 }
 func (s *ArticleHandlerSuite) TearDownTest() {
 	//s.db.Exec("truncate table `articles`")
-    //s.db.Exec("truncate table `published_articles`")
+	//s.db.Exec("truncate table `published_articles`")
 	//assert.NoError(s.T(), err)
 }
 

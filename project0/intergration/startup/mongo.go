@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func InitMongoDB() *mongo.Database{
+func InitMongoDB() *mongo.Database {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 

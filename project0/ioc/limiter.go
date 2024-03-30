@@ -8,5 +8,5 @@ import (
 
 // for responseFailover temporary use
 func InitRedisLimiter(cmd redis.Cmdable) limiter.Limiter {
-	return limiter.NewRedisSlideWindowLimiter(cmd,time.Second*5,2)
+	return limiter.NewRedisSlideWindowLimiter(cmd, time.Second*5, 2)
 }

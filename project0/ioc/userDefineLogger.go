@@ -5,12 +5,11 @@ import (
 	"project0/pkg/loggerDefine"
 )
 
-func InitLogger() loggerDefine.LoggerV1  {
-   l,err := zap.NewDevelopment()
+func InitLogger() loggerDefine.LoggerV1 {
+	l, err := zap.NewDevelopment()
 	if err != nil {
 		panic(err)
 	}
 
-
-   return loggerDefine.NewZapLogger(l)
+	return loggerDefine.NewZapLogger(l)
 }

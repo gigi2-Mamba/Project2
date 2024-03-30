@@ -17,7 +17,7 @@ type RateLimitSMSService struct {
 	key     string
 }
 
-//基于接口实现的 可以找到顶层的接口实现然后mock
+// 基于接口实现的 可以找到顶层的接口实现然后mock
 func (r *RateLimitSMSService) Send(ctx context.Context, tplId string, args []string, numbers ...string) error {
 	limited, err := r.limiter.Limit(ctx, r.key)
 	if err != nil {

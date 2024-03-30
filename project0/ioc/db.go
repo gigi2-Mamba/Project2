@@ -22,7 +22,7 @@ func InitDB(l loggerDefine.LoggerV1) *gorm.DB {
 		Dsn string `yaml:"dsn"`
 	}
 	var d dcfg
-	viper.UnmarshalKey("db",&d,)
+	viper.UnmarshalKey("db", &d)
 	//log.Println(" can out put db ",d.Dsn)
 	// Option... 结构， 无限填充,这个logger有问题。下次要注释，就先手动注释import,不然以后不好找
 	//       glogger "gorm.io/gorm/logger"
@@ -34,7 +34,7 @@ func InitDB(l loggerDefine.LoggerV1) *gorm.DB {
 		//	LogLevel: glogger.Info,
 		//},),
 
-		})
+	})
 	//Db.Callback().Query().Before("gorm:query").Register("my_plugin:sql_logger", func(db *gorm.DB) {
 	//	fmt.Println(db.Statement.SQL)
 	//})
@@ -47,7 +47,7 @@ func InitDB(l loggerDefine.LoggerV1) *gorm.DB {
 
 	// GORM自带的把控连接
 	Db.Use(prometheus.New(prometheus.Config{
-		DBName: "webook",
+		DBName:          "webook",
 		RefreshInterval: 15,
 		MetricsCollector: []prometheus.MetricsCollector{
 			&prometheus.MySQL{
@@ -81,7 +81,7 @@ func InitDB(l loggerDefine.LoggerV1) *gorm.DB {
 	if err != nil {
 		panic(err)
 	}
-    // gorm支持otel
+	// gorm支持otel
 	err = Db.Use(tracing.NewPlugin(tracing.WithoutMetrics(), tracing.WithDBName("webook")))
 	if err != nil {
 		panic(err)
@@ -93,6 +93,6 @@ func InitDB(l loggerDefine.LoggerV1) *gorm.DB {
 // 函数延伸类型实现接口
 type gormLoggerFunc func(string, ...loggerDefine.Field)
 
-func (g gormLoggerFunc) Printf(msg string, fields ...interface{})  {
-	 g(msg,loggerDefine.Field{Key: "args",Val: fields})
+func (g gormLoggerFunc) Printf(msg string, fields ...interface{}) {
+	g(msg, loggerDefine.Field{Key: "args", Val: fields})
 }

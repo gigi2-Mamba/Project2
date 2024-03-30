@@ -1,27 +1,24 @@
 package dao
 
 import (
-    "context"
-    "gorm.io/gorm"
+	"context"
+	"gorm.io/gorm"
 )
 
 type ArticleReaderDAO interface {
-   // insert  or update
-    Upsert(ctx context.Context,art Article) error
+	// insert  or update
+	Upsert(ctx context.Context, art Article) error
 }
 
-
 type ArticleGORMDAO struct {
-    db *gorm.DB
+	db *gorm.DB
 }
 
 func (a *ArticleGORMDAO) Upsert(ctx context.Context, art Article) error {
-    //TODO implement me
-    panic("implement me")
+	//TODO implement me
+	panic("implement me")
 }
 
 func NewArticleReaderGORMDAO(db *gorm.DB) ArticleReaderDAO {
-    return &ArticleGORMDAO{db: db}
+	return &ArticleGORMDAO{db: db}
 }
-
-

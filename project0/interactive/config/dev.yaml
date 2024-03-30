@@ -1,0 +1,15 @@
+test:
+  value1: 123456g
+db:
+  dsn: "root:root@tcp(172.27.19.245:13316)/webook?charset=utf8mb4&parseTime=True"
+redis:
+  addr: "localhost:6379"
+kafka:
+  addr:
+    - "172.27.19.245:9094"
+grpc:
+  server:
+#    这里直接默认localhost有可能会出问题
+    addr: ":8090"
+  client:
+    addr:

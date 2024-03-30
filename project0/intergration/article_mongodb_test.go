@@ -85,8 +85,8 @@ func (s *ArticleMongoDBHandlerSuite) TestArticle_Publish() {
 		req   Article
 
 		// 预期响应
-		wantCode   int
-		wantRes Result[int64]
+		wantCode int
+		wantRes  Result[int64]
 	}{
 		//{
 		//	name: "新建帖子并发表",
@@ -252,7 +252,6 @@ func (s *ArticleMongoDBHandlerSuite) TestArticle_Publish() {
 				Msg:  "系统错误",
 			},
 		},
-
 	}
 
 	for _, tc := range testCases {
@@ -280,13 +279,12 @@ func (s *ArticleMongoDBHandlerSuite) TestArticle_Publish() {
 			//err = json.Unmarshal(recorder.Body.Bytes(), &result)
 			err = json.NewDecoder(recorder.Body).Decode(&res)
 			assert.NoError(t, err)
-						assert.NoError(t, err)
-						if res.Data > 0 {
-							//只能断定有id
-							assert.True(t, tc.wantRes.Data > 0)
-						}
+			assert.NoError(t, err)
+			if res.Data > 0 {
+				//只能断定有id
+				assert.True(t, tc.wantRes.Data > 0)
+			}
 			tc.after(t)
-
 
 			//			var res Result[int64]
 			//			err = json.NewDecoder(recorder.Body).Decode(&res)

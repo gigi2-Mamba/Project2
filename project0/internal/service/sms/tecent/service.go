@@ -6,6 +6,7 @@ import (
 	"github.com/ecodeclub/ekit"
 	"github.com/ecodeclub/ekit/slice"
 	tecnentsms "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms/v20210111"
+	"runtime"
 )
 
 /**
@@ -28,7 +29,7 @@ func (s *Service) Send(ctx context.Context, tplId string, args []string, numbers
 	request.TemplateId = ekit.ToPtr[string](tplId)
 	request.TemplateParamSet = s.toPtrSlice(args)
 	request.PhoneNumberSet = s.toPtrSlice(numbers)
-
+     runtime.GC()
 	// 通过client对象调用想要访问的接口，需要传入请求对象
 	response, err := s.client.SendSms(request)
 	// 处理异常

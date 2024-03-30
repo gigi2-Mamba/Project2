@@ -15,29 +15,28 @@ Date: 2024/2/21  周三
 Time: 19:34
 */
 
-//
 // 大写注释会有什么效果。    NewRankingJob
-type  RankingJob struct {
-	svc service.RankingService
+type RankingJob struct {
+	svc     service.RankingService
 	timeout time.Duration
-	client *rlock.Client
-	key string
-	l loggerDefine.LoggerV1
+	client  *rlock.Client
+	key     string
+	l       loggerDefine.LoggerV1
 	// redis的lock
-	lock   *rlock.Lock
+	lock *rlock.Lock
 	// 报出redis的lock，
 	localLock *sync.Mutex
 }
 
-func NewRankingJob(svc service.RankingService, timeout time.Duration,l loggerDefine.LoggerV1,client *rlock.Client) *RankingJob {
+func NewRankingJob(svc service.RankingService, timeout time.Duration, l loggerDefine.LoggerV1, client *rlock.Client) *RankingJob {
 	return &RankingJob{
-		svc: svc,
-		timeout: timeout,
-		key: "job:ranking",
-		l: l,
+		svc:       svc,
+		timeout:   timeout,
+		key:       "job:ranking",
+		l:         l,
 		localLock: &sync.Mutex{},
-		client: client,
-		}
+		client:    client,
+	}
 }
 
 func (r *RankingJob) Name() string {
@@ -48,13 +47,13 @@ func (r *RankingJob) Name() string {
 // 保证全局只有一个实例调用任务。
 func (r *RankingJob) Run() error {
 	r.localLock.Lock()
-	//本地保护分布式锁
+	//本地锁保护分布式锁
 	lock := r.lock
 	if lock == nil {
 		//证明没有实例获取到了分布式锁
 		//去获取分布式锁的上下文
-		ctx,cancel := context.WithTimeout(context.Background(),time.Second * 4)
-		defer  cancel()
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*4)
+		defer cancel()
 		lock, err := r.client.Lock(ctx, r.key, r.timeout, &rlock.FixIntervalRetry{
 			Interval: time.Millisecond * 200,
 			Max:      3,
@@ -65,8 +64,8 @@ func (r *RankingJob) Run() error {
 		if err != nil {
 			r.localLock.Unlock()
 			// 这时候代表有其他实例获取到所以不管了
-		 r.l.Warn("ranking job 获取分布式锁失败",loggerDefine.Error(err))
-		 return nil
+			r.l.Warn("ranking job 获取分布式锁失败", loggerDefine.Error(err))
+			return nil
 		}
 		r.lock = lock
 		r.localLock.Unlock()
@@ -75,7 +74,7 @@ func (r *RankingJob) Run() error {
 			// 租约间隔和续约时间
 			//log.Println("timeout ",r.timeout)
 			//log.Println("non-positive ",r.timeout * (4/5))
-			er :=lock.AutoRefresh(time.Second * 315,r.timeout)
+			er := lock.AutoRefresh(time.Second*315, r.timeout)
 
 			if er != nil {
 				// 续约失败了
@@ -88,11 +87,10 @@ func (r *RankingJob) Run() error {
 
 	}
 	//到这里就是拿到锁了，开始运行job
-	ctx,cancel := context.WithTimeout(context.Background(),r.timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 	return r.svc.TopN(ctx)
 }
-
 
 //任务只在一个节点上运行
 
@@ -124,7 +122,3 @@ func (r *RankingJob) Run() error {
 //	defer cancel()
 //	return r.svc.TopN(ctx)
 //}
-
-
-
-

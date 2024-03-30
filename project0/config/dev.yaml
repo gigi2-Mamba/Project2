@@ -7,3 +7,10 @@ redis:
 kafka:
   addr:
     - "172.27.19.245:9094"
+
+
+grpc:
+  client:
+    intr:
+      addr: "localhost:8090"
+      threshold: 10

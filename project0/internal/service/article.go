@@ -16,16 +16,15 @@ type ArticleService interface {
 	Save(ctx context.Context, article domain.Article) (int64, error)
 	Publish(ctx context.Context, art domain.Article) (int64, error)
 	Withdraw(ctx context.Context, uid int64, id int64) error
-	GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]domain.Article,error)
-	GetById(ctx context.Context, id int64) (domain.Article,error)
-	GetPubById(ctx context.Context, id,uid int64) (domain.Article,error)
+	GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]domain.Article, error)
+	GetById(ctx context.Context, id int64) (domain.Article, error)
+	GetPubById(ctx context.Context, id, uid int64) (domain.Article, error)
 	// 热榜列表,统计某个时间之前的数据的前n条热榜数据
-	ListPub(ctx context.Context,start time.Time,offset,limit int ) ([]domain.Article,error)
-
+	ListPub(ctx context.Context, start time.Time, offset, limit int) ([]domain.Article, error)
 }
 
 type articleService struct {
-	repo repository.ArticleRepository
+	repo     repository.ArticleRepository
 	producer article.Producer
 	// service层分发制作库和线上库  v1写法
 	readerRepo repository.ArticleReaderRepository
@@ -34,22 +33,22 @@ type articleService struct {
 }
 
 func (a *articleService) ListPub(ctx context.Context, start time.Time, offset, limit int) ([]domain.Article, error) {
-	return a.repo.ListPub(ctx,start,offset,limit)
+	return a.repo.ListPub(ctx, start, offset, limit)
 }
 
-func NewArticleService(repo repository.ArticleRepository,producer article.Producer) ArticleService {
+func NewArticleService(repo repository.ArticleRepository, producer article.Producer) ArticleService {
 	return &articleService{
-		repo: repo,
+		repo:     repo,
 		producer: producer}
 }
-func (a *articleService) GetPubById(ctx context.Context, id,uid int64) (domain.Article, error) {
+func (a *articleService) GetPubById(ctx context.Context, id, uid int64) (domain.Article, error) {
 	// 如果是微服务版本，可以直接调用其他服务来补全前端缺失的领域信息
 	//log.Println("(a *articleService) GetPubById ",id)
-    // 这里只是获取整个帖子的详情
+	// 这里只是获取整个帖子的详情
 	art, err := a.repo.GetPubById(ctx, id)
 	// 在这里决定，发送一条消息给kafka.  这么一看没什么用？
 	if err == nil {
-        //log.Println("发送消息给kafka ")
+		//log.Println("发送消息给kafka ")
 		go func() {
 			//log.Println("接下来发送信息")
 			er := a.producer.ProduceReadEvent(article.ReadEvent{
@@ -58,25 +57,23 @@ func (a *articleService) GetPubById(ctx context.Context, id,uid int64) (domain.A
 			})
 			if er != nil {
 				a.l.Error("发送readEvent失败",
-					loggerDefine.Int64("aid",id),
-					loggerDefine.Int64("uid",uid))
+					loggerDefine.Int64("aid", id),
+					loggerDefine.Int64("uid", uid))
 			}
 		}()
 	}
-	return art,nil
+	return art, nil
 }
 
 func (a *articleService) GetById(ctx context.Context, id int64) (domain.Article, error) {
 
-	return  a.repo.GetById(ctx, id)
+	return a.repo.GetById(ctx, id)
 }
 
 func (a *articleService) GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]domain.Article, error) {
 
-	return  a.repo.GetByAuthor(ctx, uid, offset, limit)
+	return a.repo.GetByAuthor(ctx, uid, offset, limit)
 }
-
-
 
 func (a *articleService) Withdraw(ctx context.Context, uid int64, id int64) error {
 	return a.repo.SyncStatus(ctx, id, uid, domain.ArticleStatusPrivate)
@@ -86,11 +83,13 @@ func NewArticleServiceV1(authorRepo repository.ArticleAuthorRepository, readerRe
 	l loggerDefine.LoggerV1) *articleService {
 	return &articleService{readerRepo: readerRepo, authorRepo: authorRepo, l: l}
 }
+
 // 发表状态是属于业务逻辑，所以在服务层就改变了状态
 func (a *articleService) Publish(ctx context.Context, art domain.Article) (int64, error) {
 	art.Status = domain.ArticleStatusPublished
 	return a.repo.Sync(ctx, art)
 }
+
 // service层面分离制作库和线上库 v1   各个层面的实现分离制作库和线上库 service层面 是第一个版本
 // 靠重试
 func (a *articleService) PublishV1(ctx context.Context, art domain.Article) (int64, error) {
@@ -141,6 +140,7 @@ func (a *articleService) PublishV1(ctx context.Context, art domain.Article) (int
 
 	return id, errors.New("保存到制作库成功但是线上库失败,重试耗尽")
 }
+
 // 共用同一个接口实现修改和新建
 func (a *articleService) Save(ctx context.Context, article domain.Article) (int64, error) {
 	article.Status = domain.ArticleStatusUnPublished

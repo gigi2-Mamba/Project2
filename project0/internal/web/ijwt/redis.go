@@ -14,19 +14,17 @@ import (
 )
 
 type RedisJWTHandler struct {
-	client redis.Cmdable
+	client        redis.Cmdable
 	signingMethod jwt.SigningMethod
-	rcExpiration time.Duration
+	rcExpiration  time.Duration
 }
 
 func NewRedisJWTHandler(client redis.Cmdable) Handler {
 	return &RedisJWTHandler{
-		client: client,
+		client:        client,
 		signingMethod: jwt.SigningMethodHS512,
-		rcExpiration: time.Hour *7*24}
+		rcExpiration:  time.Hour * 7 * 24}
 }
-
-
 
 var JWTKey = []byte("oDhIbNhVlYcOtAqNvVaMlFbQrDdObWxT")
 var RefreshKey = []byte("oDhIbNhVlYcOtAqNvVaMlFbQrDdObWxg")
@@ -40,36 +38,36 @@ type UserClaims struct {
 	jwt.RegisteredClaims
 	Uid       int64
 	UserAgent string
-	Ssid    string
+	Ssid      string
 }
 
 type RefreshCliams struct {
 	jwt.RegisteredClaims
-	Uid int64
-	Ssid    string
+	Uid  int64
+	Ssid string
 }
 
-func (h *RedisJWTHandler) SetLoginJWTToken(ctx *gin.Context,uid int64) error{
+func (h *RedisJWTHandler) SetLoginJWTToken(ctx *gin.Context, uid int64) error {
 	ssid := uuid.New().String()
-	err := h.setRefreshJWT(ctx,uid,ssid)
+	err := h.setRefreshJWT(ctx, uid, ssid)
 	if err != nil {
 		ctx.String(http.StatusOK, "系统错误")
 		return err
 	}
-	return h.SetJWT(ctx, uid,ssid)
+	return h.SetJWT(ctx, uid, ssid)
 }
 
 // 退出登录,把长短token都设置非法
-func (h *RedisJWTHandler) ClearToken(ctx *gin.Context) error{
-	ctx.Header("x-jwt-token","")
-	ctx.Header("x-refresh-token","")
+func (h *RedisJWTHandler) ClearToken(ctx *gin.Context) error {
+	ctx.Header("x-jwt-token", "")
+	ctx.Header("x-refresh-token", "")
 
 	// gin context中获取用户
 	uc := ctx.MustGet("user").(UserClaims)
-	return  h.client.Set(ctx,fmt.Sprintf("users:ssid:%s", uc.Ssid),"",h.rcExpiration).Err()
+	return h.client.Set(ctx, fmt.Sprintf("users:ssid:%s", uc.Ssid), "", h.rcExpiration).Err()
 }
 
-func (h *RedisJWTHandler) SetJWT(ctx *gin.Context, uid int64,ssid string) error{
+func (h *RedisJWTHandler) SetJWT(ctx *gin.Context, uid int64, ssid string) error {
 
 	uc := UserClaims{
 		Uid: uid,
@@ -87,26 +85,27 @@ func (h *RedisJWTHandler) SetJWT(ctx *gin.Context, uid int64,ssid string) error{
 	tokenStr, err := token.SignedString(JWTKey)     // 对签名做字符串化
 	if err != nil {
 		ctx.String(http.StatusOK, "系统错误")
-		log.Println("加密refresh-token出现错误 ",err)
+		log.Println("加密refresh-token出现错误 ", err)
 		return err
 	}
 	// 返回token，通过写入ResponseWriter的头部，也就是响应标头
 	ctx.Header("x-jwt-token", tokenStr) //  设置头部，设置网络请求上下文，http 头部携带的字段： “key”-value, value also is string
 	return nil
 }
+
 // 这里变小写了 因为只在一个地方用
-func (h *RedisJWTHandler) setRefreshJWT(ctx *gin.Context, uid int64,ssid string) error {
+func (h *RedisJWTHandler) setRefreshJWT(ctx *gin.Context, uid int64, ssid string) error {
 	rc := RefreshCliams{
-		Uid:uid,
+		Uid:  uid,
 		Ssid: ssid,
 	}
-	token := jwt.NewWithClaims(h.signingMethod,&rc)
+	token := jwt.NewWithClaims(h.signingMethod, &rc)
 	tokenstr, err := token.SignedString(RefreshKey)
 	if err != nil {
 		return err
 	}
 
-	ctx.Header("x-refresh-token",tokenstr)
+	ctx.Header("x-refresh-token", tokenstr)
 
 	return nil
 
@@ -118,13 +117,14 @@ func (h *RedisJWTHandler) CheckSession(ctx *gin.Context, ssid string) error {
 		return err
 	}
 
-	if cnt > 0  {
+	if cnt > 0 {
 		return errors.New("token 无效")
 	}
 	return nil
 }
-//var _ Handler = (*RedisJWTHandler)(nil)
-func (rj *RedisJWTHandler)  ExtraToken(ctx *gin.Context) string {
+
+// var _ Handler = (*RedisJWTHandler)(nil)
+func (rj *RedisJWTHandler) ExtraToken(ctx *gin.Context) string {
 	authCode := ctx.GetHeader("Authorization") //   这个Header 头部 有衣服编码
 	if authCode == "" {
 		// 没登录

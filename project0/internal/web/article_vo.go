@@ -16,11 +16,11 @@ type ArticlePublishReq struct {
 
 type ArticleVo struct {
 	// 这里在ming version是驼峰json，我的是下划线
-	Id      int64  `json:"id,omitempty"`
-	Title   string `json:"title,omitempty"`
-	Content string `json:"content,omitempty"`
-	Abstract string `json:"abstract,omitempty"`
-	Status  uint8  `json:"status,omitempty"`
+	Id         int64  `json:"id,omitempty"`
+	Title      string `json:"title,omitempty"`
+	Content    string `json:"content,omitempty"`
+	Abstract   string `json:"abstract,omitempty"`
+	Status     uint8  `json:"status,omitempty"`
 	AuthorId   int64  `json:"author_id,omitempty"`
 	AuthorName string `json:"author_name,omitempty"`
 	Ctime      string `json:"ctime,omitempty"`
@@ -34,11 +34,11 @@ type ArticleVo struct {
 }
 
 type LikeReq struct {
-	Id  int64 `json:"id"`
-	Like bool `json:"like"`
+	Id   int64 `json:"id"`
+	Like bool  `json:"like"`
 }
 
 type CollectReq struct {
-	 Id int64 `json:"id"`
-	 Cid int64 `json:"uid"`
+	Id  int64 `json:"id"`
+	Cid int64 `json:"uid"`
 }

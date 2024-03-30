@@ -49,12 +49,12 @@ type Result struct {
 	Errmsg  string `json:"errmsg"`
 }
 
-func NewService(appID, appSecret string,l loggerDefine.LoggerV1) Service {
+func NewService(appID, appSecret string, l loggerDefine.LoggerV1) Service {
 	return &service{
 		appID:     appID,
 		appSecret: appSecret,
 		client:    http.DefaultClient,
-	    logger: l,}
+		logger:    l}
 }
 
 func (s *service) Verify(ctx context.Context, code string) (domain.WechatInfo, error) {
@@ -91,7 +91,6 @@ func (s *service) Verify(ctx context.Context, code string) (domain.WechatInfo, e
 }
 func (s *service) AuthURL(ctx context.Context, state string) (string, error) {
 	const authURLPattern = `https://open.weixin.qq.com/connect/qrconnect?appid=%s&redirect_uri=%s&response_type=code&scope=snsapi_login&state=%s#wechat_redirect`
-
 
 	//state := uuid.New()
 

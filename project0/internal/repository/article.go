@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+//go:generate mockgen -source=./article.go -pac
 type ArticleRepository interface {
 	Save(ctx context.Context, art domain.Article) (int64, error)
 	Update(ctx context.Context, article domain.Article) error
@@ -20,7 +21,9 @@ type ArticleRepository interface {
 	GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]domain.Article, error)
 	GetById(ctx context.Context, id int64) (domain.Article, error)
 	GetPubById(ctx context.Context, id int64) (domain.Article, error)
-	ListPub(ctx context.Context, start time.Time,offset, limit int) ([]domain.Article, error)
+	ListPub(ctx context.Context, start time.Time, offset, limit int) ([]domain.Article, error)
+
+
 }
 
 type CacheArticleRepository struct {
@@ -34,22 +37,23 @@ type CacheArticleRepository struct {
 	// 强耦合，没法摆脱依赖。 严格来说repository抽象存储层不用考虑具体的db实现
 	db *gorm.DB
 }
-//在repository避免不了的entity 转domain
-func (c *CacheArticleRepository) ListPub(ctx context.Context,start time.Time, offset, limit int) ([]domain.Article, error) {
-	pubArts,err :=c.dao.ListPub(ctx,start,offset,limit)
+
+// 在repository避免不了的entity 转domain
+func (c *CacheArticleRepository) ListPub(ctx context.Context, start time.Time, offset, limit int) ([]domain.Article, error) {
+	pubArts, err := c.dao.ListPub(ctx, start, offset, limit)
 	if err != nil {
-		return []domain.Article{},err
+		return []domain.Article{}, err
 	}
 	return slice.Map(pubArts, func(idx int, src dao.PublishedArticle) domain.Article {
-		   return c.toDomain(dao.Article(src))
-	}),nil
+		return c.toDomain(dao.Article(src))
+	}), nil
 
 }
 
-func NewCacheArticleRepository(dao dao.ArticleDao, cache cache.ArticleCache,user dao.UserDao) ArticleRepository {
+func NewCacheArticleRepository(dao dao.ArticleDao, cache cache.ArticleCache, user dao.UserDao) ArticleRepository {
 	return &CacheArticleRepository{
-		dao:   dao,
-		cache: cache,
+		dao:     dao,
+		cache:   cache,
 		userDao: user,
 	}
 }
@@ -62,7 +66,7 @@ func (c *CacheArticleRepository) GetPubById(ctx context.Context, id int64) (doma
 	} else {
 		//日志记录
 	}
-    log.Println("没有该发布帖子的缓存")
+	log.Println("没有该发布帖子的缓存")
 	pubArt, err := c.dao.GetPubById(ctx, id)
 	if err != nil {
 		return domain.Article{}, err
@@ -179,19 +183,19 @@ func (c *CacheArticleRepository) Sync(ctx context.Context, art domain.Article) (
 	}
 	// 预设置缓存，刚发布有人会看
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(),time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
-		log.Println("debug author_id ",art.Author.Id)
-		profile ,er := c.userDao.Profile(ctx,art.Author.Id)
-		if er !=nil {
+		log.Println("debug author_id ", art.Author.Id)
+		profile, er := c.userDao.Profile(ctx, art.Author.Id)
+		if er != nil {
 			//记录日志
 		}
 		// 灵活设置过期时间
 		art.Author = domain.Author{
-			Id: profile.Id,
-			Name:  profile.NickName,
+			Id:   profile.Id,
+			Name: profile.NickName,
 		}
-		er = c.cache.SetPub(ctx,art)
+		er = c.cache.SetPub(ctx, art)
 		if er != nil {
 			//记录日志
 		}
