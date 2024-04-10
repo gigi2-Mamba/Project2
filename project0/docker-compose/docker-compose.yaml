@@ -1,0 +1,10 @@
+version: "3"
+
+services:
+  redis:
+    image: "bitnami/redis:latest"
+    restart: on-failure
+    environment:
+      - REDIS_PASSWORD=redispwd
+    ports:
+      - "16379:6380"
