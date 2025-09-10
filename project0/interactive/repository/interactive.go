@@ -17,12 +17,14 @@ import (
 var (
 	ErrRecordNotFound = gorm.ErrRecordNotFound
 )
+
+// 体现ddd,
 type InteractiveRepository interface {
 	IncrReadCnt(ctx context.Context, biz string, bizId int64) error
 	IncrLikeCnt(ctx context.Context, biz string, id int64, uid int64) error
 	DecrLikeCnt(ctx context.Context, biz string, id int64, uid int64) error
 	AddCollectItem(ctx context.Context, biz string, id int64, cid int64, uid int64) error
-	Get(ctx context.Context, biz string, id int64) (domain.Interactive, error)
+	Get(ctx context.Context, biz string, id int64) (domain.Interactive, error) // 获取点赞，阅读，收藏数量
 	Liked(ctx context.Context, biz string, id int64, uid int64) (bool, error)
 	Collected(ctx context.Context, biz string, id int64, uid int64) (bool, error)
 	//BatchIncrReadCnt(ctx context.Context, bizs []string, bids []int64) error
@@ -147,7 +149,6 @@ func (c *CacheInteractiveRepository) IncrReadCnt(ctx context.Context, biz string
 	return c.cache.IncrReadCntIFPresent(ctx, biz, bizId)
 
 }
-
 
 // 因为拆分微服务注释掉
 //func (c *CacheInteractiveRepository) BatchIncrReadCnt(ctx context.Context, bizs []string, bizIds []int64) error {

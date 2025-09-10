@@ -13,10 +13,11 @@ import (
 	"time"
 )
 
+// how  to design such method?
 type RedisJWTHandler struct {
 	client        redis.Cmdable
 	signingMethod jwt.SigningMethod
-	rcExpiration  time.Duration
+	rcExpiration  time.Duration // rc什么意思
 }
 
 func NewRedisJWTHandler(client redis.Cmdable) Handler {
@@ -76,7 +77,7 @@ func (h *RedisJWTHandler) SetJWT(ctx *gin.Context, uid int64, ssid string) error
 		RegisteredClaims: jwt.RegisteredClaims{
 			// 1 分钟过期  ExpiresAt  jwt在何时过期
 			// 不是测试情况设置7*24
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 60)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 18)),
 		},
 		Ssid: ssid,
 	}
@@ -90,6 +91,12 @@ func (h *RedisJWTHandler) SetJWT(ctx *gin.Context, uid int64, ssid string) error
 	}
 	// 返回token，通过写入ResponseWriter的头部，也就是响应标头
 	ctx.Header("x-jwt-token", tokenStr) //  设置头部，设置网络请求上下文，http 头部携带的字段： “key”-value, value also is string
+	// 这里既没有设置ctx.Set() 也没有reids set
+	// 可能也不需要
+	//err = h.client.Set(ctx, fmt.Sprintf("users:ssid:%s", ssid), uid, h.rcExpiration).Err()
+	//if err != nil {
+	//	fmt.Println("set jwt token redis fail: ", err.Error())
+	//}
 	return nil
 }
 

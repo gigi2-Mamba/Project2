@@ -20,9 +20,11 @@ import (
 	"project0/ioc"
 )
 
+// review the usage of wire
+
 var interactiveSvcSet = wire.NewSet(
 	service2.NewInteractiveService, repository2.NewCacheInteractiveRepository,
-	cache2.NewInteractiveCache, dao2.NewInteractiveGORMDAO,)
+	cache2.NewInteractiveCache, dao2.NewInteractiveGORMDAO)
 
 var rankSvcSet = wire.NewSet(
 	cache.NewRankingRedisCache, repository.NewCacheRankingRepository,

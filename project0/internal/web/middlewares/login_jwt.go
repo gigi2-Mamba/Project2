@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"log"
@@ -24,7 +25,7 @@ func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		path := ctx.Request.URL.Path ///   ctx.Request.URL.Path  指的是把请求url的路由
 		//log.Println(path, " --------------------")
-		// 对不需要登录校验的路由放行
+		// 对不需要登录校验的路由放行,这里一大串是可以优化的，不知道怎么节省，可能是用一个什么样的结构来存
 		if path == "/users/signup" ||
 			path == "/hello" ||
 			path == "/setcookie" ||
@@ -33,31 +34,36 @@ func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 			path == "/users/login_sms0" ||
 			path == "/oauth2/wechat/authurl" ||
 			path == "/oauth2/wechat/callback" ||
-			path == "/oauth2/wechat/setcookie" ||
+			path == "/oauth2/wechat/setcookie" || // notice  这里暂时放行关于publish
+			//path == "/articles/publish" ||
 			path == "/oauth2/wechat/getcookie" {
 			return
 		}
+		// 这里弃用了bear
 		//tokenStr, ok := ctx.Get("Bearer")  //  这里的get是对ctx里维护信息传递的那个map string-string
-		tokenStr := m.Handler.ExtraToken(ctx)
-		//fmt.Println("tsr ", tokenStr)
-		var uc ijwt.UserClaims
+		tokenStr := m.Handler.ExtraToken(ctx) // extract the jwt token from Header
+		fmt.Println("tsr check login success:", tokenStr)
+		var uc ijwt.UserClaims // 传递一个函数，这个函数只需要指定input & output就这么简单
 		token, err := jwt.ParseWithClaims(tokenStr, &uc, func(token *jwt.Token) (interface{}, error) { // 参数是个接口就要传指针
 			return ijwt.JWTKey, nil
 		})
 		if err != nil {
 			// token 不对，是伪造的
 			log.Println("伪造吗 ", err)
-			ctx.AbortWithStatus(http.StatusUnauthorized)
-			ctx.String(http.StatusOK, "会话过期,请重新登录")
+			// 先注释这两个，让token放行
+			//ctx.AbortWithStatus(http.StatusUnauthorized) // 这里有两个感觉不太对阿
+			//ctx.String(http.StatusOK, "会话过期,请重新登录")
 			return
 		}
-		if !token.Valid || token == nil {
+		if !token.Valid || token == nil { // 这里前面err实现了一半
 			// token解析出来 ，可能是非法或者过期
+			fmt.Println("token nil or invalid")
 			ctx.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 		// 为什么设置7天登录的token之后就不要UserAgent的校验了？
 		if uc.UserAgent != ctx.GetHeader("User-Agent") {
+			fmt.Println("User-Agent not correct")
 			ctx.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
@@ -81,6 +87,7 @@ func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 		err = m.Handler.CheckSession(ctx, uc.Ssid)
 		if err != nil {
 			//token 无效 或者redis出错
+			log.Println("failedhere 1: ", err)
 			ctx.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
@@ -92,6 +99,6 @@ func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 		//	return
 		//}
 
-		ctx.Set("user", uc)
+		ctx.Set("user", uc) // 这里设置user ，给其他地方从ctx.MustGet("user")获取,但是这种对gin context的获取。
 	}
 }

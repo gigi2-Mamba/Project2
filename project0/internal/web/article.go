@@ -42,7 +42,7 @@ func (a *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 	ag.GET("/detail/:id", a.Detail)
 	// 创作者接口
 	ag.POST("/list", a.List)
-	pub := ag.Group("/pub")
+	pub := ag.Group("/pub") //得联合看才好和url对象
 	pub.GET("/:id", a.PubDetail)
 	// 点赞接口
 	pub.POST("/like", ginx.WrapBodyAndClaims(a.Like))
@@ -77,17 +77,18 @@ func (a *ArticleHandler) Edit(ctx *gin.Context, req ArticleEdit, uc ijwt.UserCla
 
 }
 
-// 发布接口好像和新建更新修改没什么区别？
+// 发布接口好像和新建更新修改没什么区别？   之前应该是先打草稿
 func (a *ArticleHandler) Publish(ctx *gin.Context, req ArticleEdit) (ginx.Result, error) {
 
 	type ArticlePublishReq struct {
 		// 没加json完蛋?
-		Id      int64  `json:"id"`
+		Id      int64  `json:"id"` // 这里没有说require
 		Title   string `json:"title"`
 		Content string `json:"content"`
 	}
-	// ------------
+	// ------------  这里的user没收哪里设置的
 	uc := ctx.MustGet("user").(ijwt.UserClaims)
+
 	id, err := a.svc.Publish(ctx, domain.Article{
 		//有没有id判断是新建还是修改？
 		Id:      req.Id,
@@ -226,11 +227,11 @@ func (a *ArticleHandler) Detail(ctx *gin.Context) {
 
 }
 
-// 查看已发布的帖子
+// 查看已发布的帖子，aka浏览
 func (a *ArticleHandler) PubDetail(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	//复习 strconv了   字符转换标准库。  字符串转向其他对象
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := strconv.ParseInt(idStr, 10, 64) // parseInt还有点讲究
 
 	if err != nil {
 		ctx.JSON(http.StatusOK, Result{
@@ -246,7 +247,7 @@ func (a *ArticleHandler) PubDetail(ctx *gin.Context) {
 		eg   errgroup.Group
 		art  domain.Article
 		intr *intrv1.GetResponse
-	)
+	) // there are must exist ctx.Set("user")
 	uc := ctx.MustGet("user").(ijwt.UserClaims)
 	eg.Go(func() error {
 		var er error
@@ -266,10 +267,10 @@ func (a *ArticleHandler) PubDetail(ctx *gin.Context) {
 	// 这里可以做降级？
 	eg.Go(func() error {
 		var er error
-		intr, er = a.interSvc.Get(ctx,&intrv1.GetRequest{
-			Biz: a.biz,
+		intr, er = a.interSvc.Get(ctx, &intrv1.GetRequest{
+			Biz:   a.biz,
 			Bizid: id,
-			Uid: uc.Uid,
+			Uid:   uc.Uid,
 		})
 		return er
 
@@ -317,17 +318,17 @@ func (a *ArticleHandler) Like(ctx *gin.Context, req LikeReq, uc ijwt.UserClaims)
 	// 在web层面就是可以区分前端的不同请求
 	var err error
 	if req.Like {
-		_,err = a.interSvc.Like(ctx, &intrv1.LikeRequest{
-			Biz: a.biz,
+		_, err = a.interSvc.Like(ctx, &intrv1.LikeRequest{
+			Biz:   a.biz,
 			BizId: req.Id,
-			Uid: uc.Uid,
+			Uid:   uc.Uid,
 		})
 	} else {
-		_,err = a.interSvc.CancelLike(ctx,
+		_, err = a.interSvc.CancelLike(ctx,
 			&intrv1.CancelLikeRequest{
-				Biz: a.biz,
+				Biz:   a.biz,
 				BizId: req.Id,
-				Uid: uc.Uid,
+				Uid:   uc.Uid,
 			})
 	}
 
@@ -346,11 +347,11 @@ func (a *ArticleHandler) Like(ctx *gin.Context, req LikeReq, uc ijwt.UserClaims)
 
 func (a *ArticleHandler) Collect(ctx *gin.Context, req CollectReq, uc ijwt.UserClaims) (ginx.Result, error) {
 	// 比较好的竞品的收藏功能是csdn的收藏，前端传入帖子id和收藏夹id、  目前版本实际上不处理收藏夹id.
-	_,err := a.interSvc.Collect(ctx,
+	_, err := a.interSvc.Collect(ctx,
 		&intrv1.CollectRequest{
-			Biz: a.biz,
+			Biz:   a.biz,
 			BizId: req.Id,
-			Uid: uc.Uid,
+			Uid:   uc.Uid,
 		})
 	if err != nil {
 		return ginx.Result{

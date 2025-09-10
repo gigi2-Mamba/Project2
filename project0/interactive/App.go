@@ -13,11 +13,8 @@ import (
 //
 //}
 
-
 type App struct {
-
 	consumers []events.Consumer
 	// 装饰器模式
-	server *grpcx.Server
-
+	server *grpcx.Server // extend  the grpc
 }

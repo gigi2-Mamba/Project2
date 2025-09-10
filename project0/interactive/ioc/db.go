@@ -15,7 +15,7 @@ func InitDB() *gorm.DB {
 	//gorm.Open(mysql.Open(dsn), &gorm.Config{})
 
 	// Option... 结构， 无限填充
-	Db, err := gorm.Open(mysql.Open("root:root@tcp(localhost:13316)/webook?charset=utf8mb4&parseTime=True"), &gorm.Config{})
+	Db, err := gorm.Open(mysql.Open("root:rootlxj0@tcp(localhost:13316)/webook?charset=utf8mb4&parseTime=True"), &gorm.Config{})
 
 	//log.Println("dsn: ",dsn)
 	if err != nil {

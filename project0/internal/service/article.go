@@ -86,7 +86,7 @@ func NewArticleServiceV1(authorRepo repository.ArticleAuthorRepository, readerRe
 
 // 发表状态是属于业务逻辑，所以在服务层就改变了状态
 func (a *articleService) Publish(ctx context.Context, art domain.Article) (int64, error) {
-	art.Status = domain.ArticleStatusPublished
+	art.Status = domain.ArticleStatusPublished // literal ,it's published
 	return a.repo.Sync(ctx, art)
 }
 

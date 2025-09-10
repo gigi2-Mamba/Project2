@@ -190,7 +190,6 @@ import (
 //	}
 //}
 
-
 func TestArticleHandler2_Publish(t *testing.T) {
 	testCases := []struct {
 		name string
@@ -214,7 +213,7 @@ func TestArticleHandler2_Publish(t *testing.T) {
 					},
 				}).Return(int64(123), nil)
 
-				return svc,intrSvc
+				return svc, intrSvc
 			},
 			reqBody: `
 {
@@ -242,7 +241,7 @@ func TestArticleHandler2_Publish(t *testing.T) {
 						Id: 123,
 					},
 				}).Return(int64(1), nil)
-				return svc,intrSvc
+				return svc, intrSvc
 			},
 			reqBody:  `{ "title":"够标题","content":"mock"}`,
 			wantCode: http.StatusOK,
@@ -250,7 +249,7 @@ func TestArticleHandler2_Publish(t *testing.T) {
 		},
 		{
 			name: "修改并且发表成功2",
-			mock: func(ctrl *gomock.Controller) (service.ArticleService, service2.InteractiveService)  {
+			mock: func(ctrl *gomock.Controller) (service.ArticleService, service2.InteractiveService) {
 				svc := svcmocks.NewMockArticleService(ctrl)
 				intrSvc := svcmocks.NewMockInteractiveService(ctrl)
 				svc.EXPECT().Publish(gomock.Any(), domain.Article{
@@ -266,7 +265,7 @@ func TestArticleHandler2_Publish(t *testing.T) {
 						Id: 123,
 					},
 				}).Return(int64(123), nil)
-				return svc,intrSvc
+				return svc, intrSvc
 			},
 			reqBody:  `{"id": 123,"title": "新的标题1","content":"新的内容"}`,
 			wantCode: http.StatusOK,
@@ -275,7 +274,7 @@ func TestArticleHandler2_Publish(t *testing.T) {
 		},
 		{
 			name: "已有帖子并发表失败test",
-			mock: func(ctrl *gomock.Controller) (service.ArticleService, service2.InteractiveService)  {
+			mock: func(ctrl *gomock.Controller) (service.ArticleService, service2.InteractiveService) {
 				svc := svcmocks.NewMockArticleService(ctrl)
 				intrSvc := svcmocks.NewMockInteractiveService(ctrl)
 				svc.EXPECT().Publish(gomock.Any(), domain.Article{
@@ -286,7 +285,7 @@ func TestArticleHandler2_Publish(t *testing.T) {
 						Id: 123,
 					},
 				}).Return(int64(123), nil)
-				return svc,intrSvc
+				return svc, intrSvc
 			},
 			//reqBody:  `{"id": 123,"title": "新的标题1","content":"新的内容"}`,
 			reqBody: `
@@ -313,7 +312,7 @@ func TestArticleHandler2_Publish(t *testing.T) {
 					},
 				}).Return(int64(0), errors.New("系统错误"))
 
-				return svc,intrSvc
+				return svc, intrSvc
 			},
 			//reqBody:  `{"id": 123,"title": "新的标题1","content":"新的内容"}`,
 			reqBody: `
@@ -334,8 +333,8 @@ func TestArticleHandler2_Publish(t *testing.T) {
 			defer ctrl.Finish()
 
 			// 构造 handler
-			svc ,intrSvc:= tc.mock(ctrl)
-			hdl := NewArticleHandler(svc, loggerDefine.NewNopLogger(),intrSvc)
+			svc, intrSvc := tc.mock(ctrl) // 这里应该是有个方法名没有改而已
+			hdl := NewArticleHandler(svc, loggerDefine.NewNopLogger(), intrSvc)
 
 			// 准备服务器，注册路由
 			server := gin.Default()

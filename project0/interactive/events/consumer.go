@@ -13,14 +13,15 @@ import (
 const TopicReadEvent = "article_read"
 
 type ReadEvent struct {
-	Aid int64
-	Uid int64
+	Aid int64 // article id
+	Uid int64 // user id
 }
+
 /*
 Created by payden-programmer on 2024/2/14.
 */
 // consumegrouphandler 的消费行为是   consumeClaim 也就是一个consume方法
-
+// 有一个批量消费的方法，没启用
 const batchSize = 10
 
 // 事件相关实例，消费阅读事件的东西
@@ -58,7 +59,7 @@ func NewInteractiveReadEventConsumer(repo repository.InteractiveRepository, clie
 //}
 
 // 单个消费版本= V1
-func (i *InteractiveReadEventConsumer) Start() error {
+func (i *InteractiveReadEventConsumer) Start() error { // 创建一个消费者组
 	cg, err := sarama.NewConsumerGroupFromClient("interactive_read", i.client)
 	//cg,err :=sarama.NewConsumerGroup(i.client)
 	if err != nil {

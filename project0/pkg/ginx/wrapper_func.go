@@ -29,6 +29,7 @@ func InitCounter(opt prometheus.CounterOpts) {
 	prometheus.MustRegister(vector)
 }
 
+// 这又是干嘛
 func WrapBody[Req any](bizFn func(ctx *gin.Context, req Req) (Result, error)) gin.HandlerFunc {
 
 	return func(ctx *gin.Context) {

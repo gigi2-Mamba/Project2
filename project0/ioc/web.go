@@ -17,10 +17,11 @@ import (
 	"time"
 )
 
+// 这样的注入web
 // 先注册中间件
 func InitWebServer(mdls []gin.HandlerFunc, userHdl *web.UserHandler, wechatHdl *web.OAuth2Handler, articleHdl *web.ArticleHandler) *gin.Engine {
-	server := gin.Default()
-	server.Use(mdls...)
+	server := gin.Default() // default version gin.Engine
+	server.Use(mdls...)     // 用的radix tree回头回顾一下 ，先插入中间件undoubtedly
 	// 后续增加了handler,就要继续补充。  hdl.RegisterRoute(server) 对gin server 注册路由
 	userHdl.RegisterRoute(server)
 	wechatHdl.RegisterRoutes(server)

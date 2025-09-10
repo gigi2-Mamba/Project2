@@ -8,6 +8,7 @@ import (
 	"github.com/ecodeclub/ekit"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"log"
 	"strconv"
 	"time"
 )
@@ -25,6 +26,8 @@ func (a *ArticleS3DAO) Sync(ctx context.Context, art Article) (int64, error) {
 	// 方法外定义更简洁？
 	id := art.Id
 	//log.Println("should 2 published : ",art.Status)
+	log.Println(
+		"happen s3 dao")
 	// 闭包处理事务
 	err := a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		//创造了本体，使用了事务实现

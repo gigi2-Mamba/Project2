@@ -45,7 +45,7 @@ func NewUserHandler(svc service.UserService, codeSvc service.CodeService, handle
 	}
 
 }
-func (u *UserHandler) RegisterRoute(server *gin.Engine) {
+func (u *UserHandler) RegisterRoute(server *gin.Engine) { // 当时是单独拆分的
 
 	ug := server.Group("/users")
 	// 利用函数装饰器的魅力
@@ -130,7 +130,7 @@ func (u *UserHandler) Signup(ctx *gin.Context, req SignUpReq) (ginx.Result, erro
 	}
 }
 
-func (u *UserHandler) Login(ctx *gin.Context) {
+func (u *UserHandler) Login(ctx *gin.Context) { // not current version
 	type Req struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -145,9 +145,9 @@ func (u *UserHandler) Login(ctx *gin.Context) {
 	switch err {
 	case nil:
 		sess := sessions.Default(ctx)
-		sess.Set("userId", user.Id)
+		sess.Set("userId", user.Id) // gin的session
 		sess.Options(sessions.Options{
-			MaxAge: 60, // 控制了 redis对的过期时间
+			MaxAge: 120, // 控制了 redis对的过期时间
 			//HttpOnly:
 		})
 		err = sess.Save() //  gin session设置要求主动保存
@@ -309,6 +309,7 @@ func (u *UserHandler) LoginJWT(ctx *gin.Context, req LoginReq) (ginx.Result, err
 		//if err != nil {
 		//	ctx.String(http.StatusOK, "系统错误")
 		//}
+		log.Println("SetLoginJWTToken Web side")
 		err := u.jwtHandler.SetLoginJWTToken(ctx, user.Id)
 		if err != nil {
 			return ginx.Result{

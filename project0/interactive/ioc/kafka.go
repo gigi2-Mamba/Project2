@@ -18,7 +18,7 @@ func InitSaramaClient() sarama.Client {
 	config := sarama.NewConfig()
 
 	config.Producer.Return.Successes = true
-	client, err := sarama.NewClient([]string{"172.27.19.245:9094"}, config)
+	client, err := sarama.NewClient([]string{"localhost:9094"}, config)
 	if err != nil {
 		panic(err)
 	}
@@ -34,7 +34,7 @@ func InitSaramaClient() sarama.Client {
 //
 //}
 
-// 因为wire很难找到同类注入，如同gin的中间件
+// 因为wire很难找到同类注入，如同gin的中间件   什么意思？
 func InitConsumers(c1 *events2.InteractiveReadEventConsumer) []events.Consumer {
 
 	return []events.Consumer{c1}

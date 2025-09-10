@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"github.com/fsnotify/fsnotify"
+	_ "github.com/google/wire"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -11,8 +13,6 @@ import (
 	"net/http"
 	"time"
 )
-
-
 
 func initViperV1() error {
 	viper.SetConfigFile("./config/dev.yaml") // 直接指定文件位置
@@ -24,6 +24,7 @@ func initViperV1() error {
 		panic(err)
 	}
 	log.Println("println viper ", viper.Get("test.value1"))
+	log.Println("println viper grpc server addr ", viper.Get("grpc.server.addr"))
 	return nil
 }
 
@@ -105,7 +106,6 @@ func InitPrometheus() {
 		http.Handle("/metrics", promhttp.Handler())
 		http.ListenAndServe(":8081", nil)
 	}()
-
 }
 
 // 单一服务版本
@@ -137,11 +137,11 @@ func InitPrometheus() {
 //
 //}
 
-
 // 常规的多服务版本，更灵活，更简洁
 func main() {
 
 	err := initViperV1()
+	fmt.Println("123")
 
 	if err != nil {
 		log.Println("panic in read config")
@@ -149,19 +149,20 @@ func main() {
 	}
 
 	app := InitApp()
+	fmt.Println("i'm ok app")
 	InitPrometheus()
+	fmt.Println("i'm ok1")
 	for _, c := range app.consumers {
 		err := c.Start()
 		if err != nil {
 			panic(err)
 		}
 	}
-
-
+	fmt.Println("i'm ok2")
 	err = app.server.Serve()
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println("i'm ok3")
+
 }
-
-

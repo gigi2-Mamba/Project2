@@ -5,6 +5,7 @@ import (
 	"errors"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"log"
 	"time"
 )
 
@@ -23,7 +24,7 @@ type Article struct {
 type ArticleDao interface {
 	Insert(ctx context.Context, art Article) (int64, error)
 	UpdateById(ctx context.Context, art Article) error
-	Sync(ctx context.Context, entity Article) (int64, error)
+	Sync(ctx context.Context, entity Article) (int64, error) //  这里原本有三个实现干嘛
 	SyncStatus(ctx context.Context, id int64, uid int64, status uint8) error
 	GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]Article, error)
 	GetById(ctx context.Context, id int64) (Article, error)
@@ -107,10 +108,11 @@ func (a *ArticleGROMDAO) SyncStatus(ctx context.Context, id int64, uid int64, st
 	})
 }
 
-// 闭包实现事务。  属于v3dao层分离制作库和线上库    同库不同表
+//  current use 闭包实现事务。  属于v3dao层分离制作库和线上库    同库不同表
 func (a *ArticleGROMDAO) Sync(ctx context.Context, art Article) (int64, error) {
 	// 方法外定义更简洁？
 	id := art.Id
+	log.Println("happen here1")
 	//log.Println("should 2 published : ",art.Status)
 	// 闭包处理事务
 	err := a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -121,8 +123,11 @@ func (a *ArticleGROMDAO) Sync(ctx context.Context, art Article) (int64, error) {
 			err error
 		)
 		if id > 0 {
+			log.Println("here gorm dao, update: ", art.Id)
+
 			err = dao.UpdateById(ctx, art)
 		} else {
+			log.Println("here gorm dao, create: ", art.Id)
 			id, err = dao.Insert(ctx, art)
 		}
 

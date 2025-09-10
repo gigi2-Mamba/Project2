@@ -1,12 +1,12 @@
 test:
   value1: 123456g
 db:
-  dsn: "root:root@tcp(172.27.19.245:13316)/webook?charset=utf8mb4&parseTime=True"
+  dsn: "root:rootlxj0@tcp(localhost:13316)/webook?charset=utf8mb4&parseTime=True"
 redis:
-  addr: "localhost:6379"
+  addr: "127.0.0.2:16379"
 kafka:
   addr:
-    - "172.27.19.245:9094"
+    - "localhost:9094"
 
 
 grpc:

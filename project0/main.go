@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"project0/internal/service/sms/failover"
 	"project0/ioc"
-	"sync"
 	"time"
 )
 
@@ -148,8 +147,6 @@ func main() {
 		tpCancel(ctx)
 
 	}()
-	sync.Pool
-	sync.Map
 	if err != nil {
 		log.Println("panic in readconfig")
 		panic(err)
