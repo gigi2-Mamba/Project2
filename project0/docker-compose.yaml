@@ -23,8 +23,8 @@ services:
     environment:
       #- ALLOW_EMPTY_PASSWORD=yes
       - REDIS_PASSWORD=lxjredis123
-    ports:
-      - '16379:6379'
+    ports:  #modified for  open im，  6379 -> 6378
+      - '16379:6378'
 #  etcd:
 #    image: "bitnami/etcd:latest"
 #    restart: always
@@ -49,7 +49,7 @@ services:
 #      - ETCD_ROOT_PASSWORD="lxj360"
 
     ports:
-      - 12379:2379
+      - 12379:12379
 
   zipkin:
     #    用的是不支持 Kafka 之类的简化版本
@@ -74,7 +74,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
     ports:
-      - 27017:27017
+      - 27018:27018
 
   kafka:
     image: 'bitnami/kafka:3.6.0'
@@ -82,14 +82,14 @@ services:
     restart: on-failure
     ports:
       - '9092:9092'
-      - '9094:9094'
+      - '9091:9091'
     environment:
       - KAFKA_CFG_NODE_ID=0 #分配节点id
       #      - 允许自动创建 topic，线上不要开启，专门为了方便测试
       - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
       - KAFKA_CFG_PROCESS_ROLES=controller,broker
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://0.0.0.0:9092,CONTROLLER://:9093,EXTERNAL://0.0.0.0:9094
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://0.0.0.0:9092,CONTROLLER://:9093,EXTERNAL://0.0.0.0:9091
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL://localhost:9091
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093  #投票节点
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
