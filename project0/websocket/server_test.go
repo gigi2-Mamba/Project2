@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// 简单模拟一下，双向通信
 func TestServer(t *testing.T) {
 	upgrader := websocket.Upgrader{} // 这只是一个媒介,用来装载关于http upgrade 的 parameter
 
@@ -15,7 +16,7 @@ func TestServer(t *testing.T) {
 		//responseHeader 可以不传，为什么？
 		conn, err := upgrader.Upgrade(writer, request, nil)
 		if err != nil {
-			writer.Write([]byte("upgrade error"))
+			writer.Write([]byte("upgrade error")) // obviously，write some message into writer and return to frontend
 			return
 		}
 		ws := &Ws{conn}
@@ -57,7 +58,7 @@ func (w *Ws) ReadCycle() {
 			// exit loop
 			// record log
 			return
-		} // type有三种类型，TextMessag,BinaryMessage,CloseMessage   pingmessage, pongmessage 对应心跳
+		} // type有三种类型，TextMessage,BinaryMessage,CloseMessage   pingmessage, pongmessage 对应心跳
 		switch typ {
 		case websocket.CloseMessage:
 			conn.Close()
