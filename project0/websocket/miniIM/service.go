@@ -37,8 +37,8 @@ func (s *Service) Receive(ctx context.Context, sender int64, msg Message) error 
 			Value: sarama.ByteEncoder(val),
 		})
 		if err != nil {
-			log.Println("send message fail: "，err.Error())
-           return err
+			log.Println("send message fail: ", err.Error())
+			return err
 		}
 
 	}

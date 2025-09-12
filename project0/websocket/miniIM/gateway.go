@@ -3,9 +3,13 @@ package miniIM
 import (
 	"context"
 	"encoding/json"
+	"github.com/IBM/sarama"
+	"github.com/ecodeclub/ekit/syncx"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+	"project0/pkg/loggerDefine"
+	"project0/pkg/saramax"
 	"strconv"
 	"time"
 )
@@ -16,7 +20,13 @@ mini IM,
 */
 
 type WsGateway struct {
-	svc *Service
+	svc        *Service
+	client     sarama.Client
+	l          loggerDefine.LoggerV1 // 这个logger回头看一下，好像也是适配器模式啥的
+	conns      syncx.Map[int64, *Conn]
+	instanceID string
+	// 复用grader
+	upgrader *websocket.Upgrader
 }
 
 func (s *WsGateway) start(addr string) {
@@ -37,6 +47,7 @@ func (s *WsGateway) start(addr string) {
 		// where to get uid,jwt / session
 		uid := s.Uid(request)
 		conn := &Conn{c}
+		s.conns.Store(uid, conn) // notice
 		go func() {
 			for {
 				// 转发到service
@@ -75,6 +86,10 @@ func (s *WsGateway) start(addr string) {
 
 }
 
+func (s *WsGateway) wsHandler(writer http.ResponseWriter, request *http.Request) {
+
+}
+
 type Conn struct {
 	*websocket.Conn
 }
@@ -100,9 +115,38 @@ type Message struct {
 	Cid int64
 }
 
+// start the consumer
+func (s *WsGateway) subscribeMsg() error {
+	// NewConsumerGroupFromClient,Client is sarama client
+	cg, err := sarama.NewConsumerGroupFromClient(s.instanceID, s.client)
+	if err != nil {
+		//record  error
+		return err
+	}
+	go func() {
+		err := cg.Consume(context.Background(), []string{eventName}, saramax.NewHandler[Event](s.l, s.Consume))
+		if err != nil {
+			//记录日志
+		}
+	}()
+	return nil
+}
+
 func (s *WsGateway) Uid(req *http.Request) int64 {
 	uidStr := req.Header.Get("uid") //
 	uid, _ := strconv.ParseInt(uidStr, 10, 64)
 	return uid
 
+}
+
+func (s *WsGateway) Consume(msg *sarama.ConsumerMessage, evt Event) error {
+	// i need to consume
+	conn, ok := s.conns.Load(evt.Receiver)
+	if !ok {
+
+		return nil
+	}
+	val, _ := json.Marshal(evt.Msg)
+	// 就只是纯发
+	return conn.WriteMessage(websocket.TextMessage, val)
 }
