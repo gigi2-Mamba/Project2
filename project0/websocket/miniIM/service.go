@@ -33,7 +33,7 @@ func (s *Service) Receive(ctx context.Context, sender int64, msg Message) error 
 		// producer.sendMessage & producer.sendMessages
 		_, _, err := s.producer.SendMessage(&sarama.ProducerMessage{
 			Topic: eventName,
-			Key:   sarama.StringEncoder(strconv.FormatInt(member, 10)),
+			Key:   sarama.StringEncoder(strconv.FormatInt(member, 10)), // 就是int 转string,只不过用stringEncoder再转一下，适配key
 			Value: sarama.ByteEncoder(val),
 		})
 		if err != nil {
